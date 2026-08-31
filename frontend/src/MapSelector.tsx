@@ -1,16 +1,36 @@
+import React from 'react';
 import { SPOTS } from './constants';
+import { UserState } from './types';
 
-export default function MapSelector({ userState, selectedSpot, setSelectedSpot, handleMoveStart, handleDrawOmikuji, isDrawing, isCodexComplete, isAdmin }) {
+interface MapSelectorProps {
+  userState: UserState | null;
+  selectedSpot: number;
+  setSelectedSpot: (id: number) => void;
+  handleMoveStart: () => void;
+  handleDrawOmikuji: () => void;
+  isDrawing: boolean;
+  isCodexComplete?: boolean;
+}
+
+export default function MapSelector({ 
+  userState, 
+  selectedSpot, 
+  setSelectedSpot, 
+  handleMoveStart, 
+  handleDrawOmikuji, 
+  isDrawing,
+  isCodexComplete = false
+}: MapSelectorProps) {
   const currentSpot = userState?.current_spot_id 
     ? SPOTS.find(s => s.id === userState.current_spot_id) 
     : null;
 
-  // 히든 스팟은 도감 10개 완성 시 또는 관리자 모드일 때만 해금
-  const availableSpots = SPOTS.filter(spot => !spot.isHidden || isCodexComplete || isAdmin);
+  // 히든 스팟(Spot 12: 인터스텔라 테서렉트)은 도감 11종 수집 완료 시에만 노출
+  const availableSpots = SPOTS.filter(s => !s.isHidden || isCodexComplete);
 
   return (
-    <div className="bg-black/40 backdrop-blur-2xl p-4 sm:p-5 rounded-3xl animate-slide-up shadow-2xl border border-white/10 space-y-4">
-      {/* 16:9 Hero Card with current location */}
+    <div className="bg-black/40 backdrop-blur-2xl p-5 sm:p-6 rounded-3xl shadow-2xl border border-white/10 flex flex-col space-y-4">
+      {/* Current Spot Info Box */}
       {currentSpot ? (
         <div className="relative rounded-xl overflow-hidden border border-gray-700 shadow-2xl group">
           <img 

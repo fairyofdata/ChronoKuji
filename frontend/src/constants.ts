@@ -1,4 +1,6 @@
-export const SYSTEM_AUDIO_TRACKS = {
+import { Spot, SystemAudioTracks, CodexItem } from './types';
+
+export const SYSTEM_AUDIO_TRACKS: SystemAudioTracks = {
   lobby: {
     bgm: '/assets/audio/bgm/chrono_wind_scene.mp3',
     youtubeId: 'ESqZbKPMu00',
@@ -29,7 +31,7 @@ export const SYSTEM_AUDIO_TRACKS = {
   }
 };
 
-export const SPOTS = [
+export const SPOTS: Spot[] = [
   {
     id: 1,
     name: "크라이덴 평원 (테일즈위버)",
@@ -214,7 +216,7 @@ export const SPOTS = [
 ];
 
 // 11대 차원 도감 수집 마스터 목록
-export const CODEX_ITEMS = [
+export const CODEX_ITEMS: CodexItem[] = [
   {
     id: 1,
     spotId: 1,
@@ -231,16 +233,16 @@ export const CODEX_ITEMS = [
     locationName: '물풍경시티 도개교',
     worldName: '포켓몬스터',
     image: '/assets/items/item_2_monsterball.jpg',
-    desc: '새로운 모험과 잠재력을 품은 활기찬 트레이너의 도구'
+    desc: '새로운 만남과 모험의 가능성이 담긴 캡슐'
   },
   {
     id: 3,
     spotId: 3,
     name: '약탕패',
-    locationName: '온천장 아부라야',
+    locationName: '온천장 \'아부라야\'',
     worldName: '센과 치히로',
     image: '/assets/items/item_3_bathtag.jpg',
-    desc: '신비로운 온천수의 영적인 치유력이 담긴 기묘한 목패'
+    desc: '온천장의 신비로운 효능과 정화의 기운이 깃든 나무 팻말'
   },
   {
     id: 4,
@@ -249,7 +251,7 @@ export const CODEX_ITEMS = [
     locationName: '나이트 시티',
     worldName: '사이버펑크 2077',
     image: '/assets/items/item_4_neuralchip.jpg',
-    desc: '위기의 순간 냉철한 판단력을 끌어올리는 하이테크 칩'
+    desc: '한계를 뛰어넘는 반사신경과 사이버웨어 칩'
   },
   {
     id: 5,
@@ -258,7 +260,7 @@ export const CODEX_ITEMS = [
     locationName: '모의 선술집',
     worldName: '심슨 가족',
     image: '/assets/items/item_5_beer.jpg',
-    desc: '복잡한 고민도 한 모금에 털어버리게 만드는 유쾌한 탄산'
+    desc: '하루의 피로를 털어내는 유쾌하고 시원한 맥주 한 잔'
   },
   {
     id: 6,
@@ -267,7 +269,7 @@ export const CODEX_ITEMS = [
     locationName: '떡잎마을 놀이터',
     worldName: '크레용 신짱',
     image: '/assets/items/item_6_chocobi.jpg',
-    desc: '어린아이의 순수한 웃음과 엉뚱한 마법을 불러오는 달콤함'
+    desc: '순수한 동심과 달콤한 즐거움이 가득한 핑크빛 과자 상자'
   },
   {
     id: 7,
@@ -276,7 +278,7 @@ export const CODEX_ITEMS = [
     locationName: '오이서스트 시험장',
     worldName: '장송의 프리렌',
     image: '/assets/items/item_7_grimoire.jpg',
-    desc: '천 년의 시간과 삶의 소중한 의미가 기록된 현자의 서적'
+    desc: '유구한 시간과 마법의 지혜가 기록된 양피지 마도서'
   },
   {
     id: 8,
@@ -285,7 +287,7 @@ export const CODEX_ITEMS = [
     locationName: '리스항구',
     worldName: '메이플스토리',
     image: '/assets/items/item_8_potion.jpg',
-    desc: '첫 모험을 떠나던 날의 설렘과 지친 마음에 활력을 주는 물약'
+    desc: '모험의 첫 발걸음과 원기를 회복시켜주는 물약'
   },
   {
     id: 9,
@@ -294,7 +296,7 @@ export const CODEX_ITEMS = [
     locationName: '코로나 왕국',
     worldName: '라푼젤',
     image: '/assets/items/item_9_fryingpan.jpg',
-    desc: '새로운 세상을 향해 나아갈 용기를 주는 든든한 황금빛 도구'
+    desc: '단단한 결단력과 용기를 북돋워 주는 만능 무기'
   },
   {
     id: 10,
@@ -303,15 +305,15 @@ export const CODEX_ITEMS = [
     locationName: '칼바람 나락',
     worldName: '리그 오브 레전드',
     image: '/assets/items/item_10_porosnax.jpg',
-    desc: '혹한의 칼바람 속에서도 따뜻한 온기를 나누는 마법의 비스킷'
+    desc: '혹한의 칼바람 속에서도 마음을 따스하게 녹이는 푹신한 간식'
   },
   {
     id: 11,
     spotId: 11,
     name: '골든 스니치',
-    locationName: '호그와트 그레이트 홀',
+    locationName: '호그와트 마법학교',
     worldName: '해리 포터',
     image: '/assets/items/item_11_goldensnitch.jpg',
-    desc: '손에 쥐는 순간 승리와 행운의 판도를 뒤바꾸는 황금빛 날개구'
+    desc: '잡는 순간 승리를 가져다주는 황금빛 마법 날개의 스니치'
   }
 ];

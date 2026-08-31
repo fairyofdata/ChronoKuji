@@ -1,6 +1,15 @@
+import React from 'react';
 import { SPOTS, SYSTEM_AUDIO_TRACKS } from './constants';
+import { UserState } from './types';
 
-export default function MovementTimer({ userState, timeLeft, isAdmin, handleArrive }) {
+interface MovementTimerProps {
+  userState: UserState | null;
+  timeLeft: number;
+  isAdmin: boolean;
+  handleArrive: () => void;
+}
+
+export default function MovementTimer({ userState, timeLeft, isAdmin, handleArrive }: MovementTimerProps) {
   const progressPercent = Math.min(100, Math.max(0, ((60 - timeLeft) / 60) * 100));
   const isTargetRift = userState?.target_spot_id === 0;
   const targetSpot = userState?.target_spot_id 
@@ -50,20 +59,27 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, handleArri
           <p className="text-3xl sm:text-4xl font-mono text-white font-black tracking-widest drop-shadow">
             {timeLeft}<span className="text-lg font-normal text-gray-400 ml-1">초</span>
           </p>
+          <p className="text-xs text-cyan-200 font-medium animate-bounce">
+            차원 회랑을 질주하고 있습니다. 잠시만 기다려주세요!
+          </p>
         </div>
       )}
 
-      {userState?.target_spot_id && (userState?.is_arrived || isAdmin) && (
-        <div className="bg-gray-700/90 backdrop-blur-sm p-6 rounded-2xl animate-slide-up shadow-2xl border border-green-500/40 text-center space-y-4">
-          <div className="w-14 h-14 bg-green-500/20 text-green-400 text-3xl rounded-full flex items-center justify-center mx-auto border border-green-500/40 animate-bounce">
-            ✨
-          </div>
-          <div>
-            <h3 className="text-green-300 text-xl font-black">목적지에 도착했습니다!</h3>
-            <p className="text-xs text-gray-300 mt-1">{targetSpot?.name || "새로운 차원"}에 진입했습니다.</p>
-          </div>
-          <button onClick={handleArrive} className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-extrabold py-3.5 px-4 rounded-xl transition transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-green-500/40">
-            오미쿠지 대기열 입장하기 🚪
+      {/* 도착 완료 버튼 */}
+      {((userState?.is_arrived && userState?.target_spot_id) || (isAdmin && userState?.target_spot_id)) && (
+        <div className="bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-2xl p-6 rounded-3xl shadow-2xl border border-yellow-400/50 flex flex-col items-center space-y-3">
+          <div className="text-3xl animate-bounce">✨</div>
+          <h3 className="text-xl font-black text-yellow-300 drop-shadow">
+            목적지 차원에 도달했습니다!
+          </h3>
+          <p className="text-xs text-gray-200">
+            {isTargetRift ? "차원의 균열 성소에 무사히 도착했습니다." : `${targetSpot?.name || "목적지"}의 시공간에 성공적으로 안착했습니다.`}
+          </p>
+          <button 
+            onClick={handleArrive}
+            className="w-full bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-black font-black py-3.5 px-6 rounded-xl shadow-lg transition transform hover:scale-[1.02] active:scale-[0.98]"
+          >
+            차원 진입 확정 🚪
           </button>
         </div>
       )}
