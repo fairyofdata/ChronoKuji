@@ -1,0 +1,13 @@
+{
+  "name": "chronokuji",
+  "version": "1.0.0",
+  "description": "ChronoKuji - 멀티버스 시공간 확장형 AI 오미쿠지 & 도감 PWA",
+  "scripts": {
+    "dev:backend": ".\\venv\\Scripts\\python.exe -m uvicorn main:app --reload --port 8000",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently -k -n \"BACKEND,FRONTEND\" -c \"cyan,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
