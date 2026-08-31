@@ -1,0 +1,8 @@
+# GitHub Linguist Language Detection Rules
+*.ts linguist-detectable=true
+*.tsx linguist-detectable=true
+*.py linguist-detectable=true
+*.json linguist-detectable=false
+*.md linguist-documentation=true
+package-lock.json linguist-generated=true
+frontend/package-lock.json linguist-generated=true
