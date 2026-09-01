@@ -17,8 +17,14 @@ load_dotenv()
 
 router = APIRouter(prefix="/api/v1/interpret", tags=["Interpretation"])
 
-# OpenAI 비동기 클라이언트 생성
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+def get_openai_client() -> AsyncOpenAI:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="OPENAI_API_KEY 환경 변수가 서버에 설정되어 있지 않습니다."
+        )
+    return AsyncOpenAI(api_key=api_key)
 
 # ---------------------------------------------------------
 # Pydantic Schema: LLM의 출력을 정통 오미쿠지 세부 구조로 강제합니다.
@@ -99,7 +105,8 @@ async def interpret_omikuji(
 
     # 4. OpenAI API 호출 (구조화된 출력 강제)
     try:
-        completion = await client.beta.chat.completions.parse(
+        ai_client = get_openai_client()
+        completion = await ai_client.beta.chat.completions.parse(
             model="gpt-4o-mini", # 비용 최적화를 위해 빠르고 저렴한 4o-mini 사용
             messages=[
                 {"role": "system", "content": system_prompt},

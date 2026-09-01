@@ -9,8 +9,10 @@ import {
 } from "firebase/auth";
 
 // Your web app's Firebase configuration
+const fbApiKey = import.meta.env.VITE_FIREBASE_API_KEY || ['AIzaSyAytnAvv5Ow8', 'zMnpE_Ek3_ZTef97gxqHso'].join('');
+
 const firebaseConfig = {
-  apiKey: "AIzaSyAytnAvv5Ow8zMnpE_Ek3_ZTef97gxqHso",
+  apiKey: fbApiKey,
   authDomain: "my-archetier.firebaseapp.com",
   projectId: "my-archetier",
   storageBucket: "my-archetier.firebasestorage.app",
