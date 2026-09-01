@@ -6,9 +6,7 @@ interface MapSelectorProps {
   userState: UserState | null;
   selectedSpot: number;
   setSelectedSpot: (id: number) => void;
-  handleMoveStart: () => void;
-  handleDrawOmikuji: () => void;
-  isDrawing: boolean;
+  onStartMove: () => void;
   isCodexComplete?: boolean;
 }
 
@@ -16,9 +14,7 @@ export default function MapSelector({
   userState, 
   selectedSpot, 
   setSelectedSpot, 
-  handleMoveStart, 
-  handleDrawOmikuji, 
-  isDrawing,
+  onStartMove, 
   isCodexComplete = false
 }: MapSelectorProps) {
   const currentSpot = userState?.current_spot_id 
@@ -112,7 +108,7 @@ export default function MapSelector({
         </div>
 
         <button 
-          onClick={handleMoveStart} 
+          onClick={onStartMove} 
           className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold py-3 px-4 rounded-xl transition transform hover:scale-[1.01] active:scale-[0.99] shadow-md hover:shadow-purple-500/30"
         >
           차원 이동 시작 (60초 소요) ⚡

@@ -555,9 +555,10 @@ function AppContent() {
             <div className="w-full flex flex-col space-y-4 animate-fade-in">
               <MapSelector 
                 selectedSpot={selectedSpot}
-                onSelectSpot={setSelectedSpot}
-                onStartMove={handleMoveStart}
+                setSelectedSpot={setSelectedSpot}
+                onStartMove={() => handleMoveStart()}
                 userState={userState}
+                isCodexComplete={isCodexComplete}
               />
             </div>
           )}
