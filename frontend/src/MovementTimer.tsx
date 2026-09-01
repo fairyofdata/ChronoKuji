@@ -41,7 +41,7 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, handleArri
           
           <div className="w-full h-28 rounded-xl overflow-hidden relative border border-gray-700 shadow-inner">
             <img 
-              src={isTargetRift ? "/assets/worlds/lobby_rift.jpg" : (targetSpot?.bgImage || "/assets/worlds/lobby_rift.jpg")} 
+              src={isTargetRift ? "/assets/worlds/lobby_rift.jpg?v=2" : (targetSpot?.bgImage || "/assets/worlds/lobby_rift.jpg?v=2")} 
               alt="목적지" 
               className="w-full h-full object-cover filter brightness-75 animate-pulse" 
             />

@@ -379,8 +379,8 @@ export default function App() {
     : null;
 
   const bgImageSrc = (userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && !userState?.is_arrived && timeLeft > 0)
-    ? '/assets/worlds/traveling_time_path.jpg'
-    : (currentSpot ? currentSpot.bgImage : '/assets/worlds/lobby_rift.jpg');
+    ? '/assets/worlds/traveling_time_path.jpg?v=2'
+    : (currentSpot ? currentSpot.bgImage : '/assets/worlds/lobby_rift.jpg?v=2');
 
   return (
     <div className="min-h-screen w-full relative overflow-x-hidden text-white flex flex-col font-sans select-none">
