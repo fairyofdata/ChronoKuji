@@ -91,6 +91,25 @@ function AppContent() {
             AudioEngine.playLobbyMusic();
           }
         }
+      } else if (res.status === 404) {
+        // Stale guest UUID in browser storage -> auto-recover new session
+        localStorage.removeItem('omikuz_user_id');
+        const authRes = await fetch(`${API_BASE_URL}/api/v1/users/auth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (authRes.ok) {
+          const authData = await authRes.json();
+          setUserId(authData.user_id);
+          localStorage.setItem('omikuz_user_id', authData.user_id);
+          const recoverRes = await fetch(`${API_BASE_URL}/api/v1/users/state`, {
+            headers: { 'x-user-id': authData.user_id }
+          });
+          if (recoverRes.ok) {
+            const recoveredState = await recoverRes.json();
+            setUserState(recoveredState);
+          }
+        }
       }
     } catch (e) {
       console.error("fetchUserState Error:", e);

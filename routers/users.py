@@ -131,6 +131,7 @@ async def firebase_google_login(
     }
 
 @router.get("/me")
+@router.get("/state")
 async def get_user_state(
     current_user: User = Depends(get_current_user)
 ):
