@@ -13,8 +13,15 @@ class User(Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     
-    # 토큰 시스템 (20시간 쿨타임)
-    llm_tokens: Mapped[int] = mapped_column(Integer, default=1)
+    # Firebase Auth 연동
+    firebase_uid: Mapped[Optional[str]] = mapped_column(String(128), unique=True, nullable=True, index=True)
+    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    display_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    photo_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    is_guest: Mapped[bool] = mapped_column(default=True)
+
+    # 토큰 시스템 (Google 로그인 유저 전용 20시간 쿨타임)
+    llm_tokens: Mapped[int] = mapped_column(Integer, default=0) # 게스트는 0, 회원은 1
     last_token_refill_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # 이동 시스템 (상태 관리)

@@ -8,6 +8,7 @@
 .env.*.local
 *.pem
 *.key
+.firebase/
 
 # 2. Database & Data Stores
 *.db

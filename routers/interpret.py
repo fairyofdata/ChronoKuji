@@ -56,11 +56,18 @@ async def interpret_omikuji(
 ):
     """유저의 고민을 입력받아 LLM 심층 해석을 진행하고, 토큰을 1개 소모합니다."""
     
-    # 1. 유저 토큰 검증 (관리자는 토큰 제한 무시)
+    # 1. 유저 인증 상태 검증 (게스트는 AI 해석 불가)
+    if current_user.is_guest and x_admin_bypass != "486":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="AI 심층 풀이는 구글 로그인 후 이용하실 수 있습니다. (20시간마다 1회 무료)"
+        )
+
+    # 2. 유저 토큰 검증 (관리자는 토큰 제한 무시)
     if current_user.llm_tokens < 1 and x_admin_bypass != "486":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="LLM 해석 토큰이 부족합니다. (20시간마다 1개 충전)"
+            detail="오늘의 AI 심층 풀이 토큰을 모두 소모하였습니다. (20시간마다 1개 자동 충전)"
         )
 
     try:

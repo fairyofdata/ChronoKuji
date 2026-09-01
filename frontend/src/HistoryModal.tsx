@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SPOTS } from './constants';
 import { AudioEngine } from './audioEngine';
 import { FateHistoryItem } from './types';
+import { API_BASE_URL } from './config';
 
 interface HistoryModalProps {
   isOpen: boolean;
@@ -36,7 +37,7 @@ export default function HistoryModal({ isOpen, onClose, userId, currentSpotId }:
     if (!userId) return;
     setIsLoading(true);
     try {
-      const res = await fetch('/api/v1/omikuji/history', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/omikuji/history`, {
         headers: { 'x-user-id': userId }
       });
       if (res.ok) {

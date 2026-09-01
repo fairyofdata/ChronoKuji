@@ -10,15 +10,21 @@ interface MovementTimerProps {
 }
 
 export default function MovementTimer({ userState, timeLeft, isAdmin, handleArrive }: MovementTimerProps) {
-  const progressPercent = Math.min(100, Math.max(0, ((60 - timeLeft) / 60) * 100));
+  const isMoving = userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && !userState?.is_arrived;
+  const isArrived = (userState?.is_arrived && userState?.target_spot_id !== null && userState?.target_spot_id !== undefined) || 
+                    (isAdmin && userState?.target_spot_id !== null && userState?.target_spot_id !== undefined);
+  
   const isTargetRift = userState?.target_spot_id === 0;
-  const targetSpot = userState?.target_spot_id 
+  const targetSpot = (userState?.target_spot_id !== null && userState?.target_spot_id !== undefined)
     ? SPOTS.find(s => s.id === userState.target_spot_id) 
     : null;
 
+  const progressPercent = Math.min(100, Math.max(0, ((60 - timeLeft) / 60) * 100));
+
   return (
     <div className="animate-fade-in w-full">
-      {userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && !userState?.is_arrived && timeLeft > 0 && !isAdmin && (
+      {/* 1. Spacetime Warp Traveling Card */}
+      {isMoving && !isAdmin && (
         <div className="bg-black/40 backdrop-blur-2xl p-6 rounded-3xl shadow-2xl border border-cyan-500/30 flex flex-col items-center space-y-4">
           <div className="flex flex-col items-center space-y-1">
             <div className="flex items-center space-x-2 text-yellow-300 text-base font-extrabold animate-pulse">
@@ -56,18 +62,26 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, handleArri
             </div>
           </div>
 
-          <p className="text-3xl sm:text-4xl font-mono text-white font-black tracking-widest drop-shadow">
-            {timeLeft}<span className="text-lg font-normal text-gray-400 ml-1">초</span>
-          </p>
-          <p className="text-xs text-cyan-200 font-medium animate-bounce">
-            차원 회랑을 질주하고 있습니다. 잠시만 기다려주세요!
-          </p>
+          {timeLeft > 0 ? (
+            <>
+              <p className="text-3xl sm:text-4xl font-mono text-white font-black tracking-widest drop-shadow">
+                {timeLeft}<span className="text-lg font-normal text-gray-400 ml-1">초</span>
+              </p>
+              <p className="text-xs text-cyan-200 font-medium animate-bounce">
+                차원 회랑을 질주하고 있습니다. 잠시만 기다려주세요!
+              </p>
+            </>
+          ) : (
+            <div className="flex items-center space-x-2 py-2 text-yellow-300 animate-pulse text-sm font-bold">
+              <span>✨ 시공간 목적지에 안착 중입니다...</span>
+            </div>
+          )}
         </div>
       )}
 
-      {/* 도착 완료 버튼 */}
-      {((userState?.is_arrived && userState?.target_spot_id) || (isAdmin && userState?.target_spot_id)) && (
-        <div className="bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-2xl p-6 rounded-3xl shadow-2xl border border-yellow-400/50 flex flex-col items-center space-y-3">
+      {/* 2. Arrival Confirmation Button */}
+      {isArrived && (
+        <div className="bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-2xl p-6 rounded-3xl shadow-2xl border border-yellow-400/50 flex flex-col items-center space-y-3 animate-fade-in">
           <div className="text-3xl animate-bounce">✨</div>
           <h3 className="text-xl font-black text-yellow-300 drop-shadow">
             목적지 차원에 도달했습니다!

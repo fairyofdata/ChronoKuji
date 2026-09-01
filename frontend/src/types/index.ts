@@ -52,7 +52,13 @@ export interface CollectedCodexItem {
 
 export interface UserState {
   user_id: string;
+  firebase_uid?: string | null;
+  email?: string | null;
+  display_name?: string | null;
+  photo_url?: string | null;
+  is_guest?: boolean;
   llm_tokens: number;
+  last_token_refill_at?: string;
   current_spot_id: number | null;
   target_spot_id: number | null;
   arrival_time: string | null;

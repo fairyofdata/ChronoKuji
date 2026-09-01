@@ -12,28 +12,38 @@ from models import User # (앞서 정의한 SQLAlchemy User 모델)
 TOKEN_COOLDOWN_HOURS = 20
 
 async def get_current_user(
-    x_user_id: str = Header(..., description="LocalStorage에 저장된 유저 UUID"),
+    x_user_id: str = Header(..., description="유저 UUID 또는 Firebase UID"),
     db: AsyncSession = Depends(get_db)
 ) -> User:
     """
-    헤더에서 UUID를 받아 유저를 식별하고, 토큰 리필(지연 평가)을 수행하는 의존성 함수
+    헤더에서 UUID나 Firebase UID를 받아 유저를 식별하고, 
+    Google 로그인 회원의 경우 20시간 쿨타임 토큰 리필(지연 평가)을 수행하는 의존성 함수
     """
+    user = None
+    # 1. UUID 포맷인지 먼저 확인
     try:
         user_uuid = uuid.UUID(x_user_id)
+        result = await db.execute(select(User).where(User.id == user_uuid))
+        user = result.scalars().first()
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid UUID format")
+        # UUID가 아니라면 Firebase UID로 조회
+        result = await db.execute(select(User).where(User.firebase_uid == x_user_id))
+        user = result.scalars().first()
 
-    # DB에서 유저 조회
-    result = await db.execute(select(User).where(User.id == user_uuid))
-    user = result.scalars().first()
+    if not user:
+        # Firebase UID로도 없을 경우 조회
+        result = await db.execute(select(User).where(User.firebase_uid == x_user_id))
+        user = result.scalars().first()
 
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    # [Lazy Evaluation] 20시간 쿨타임 토큰 리필 로직
+    # 게스트는 토큰 자동 리필 대상이 아님 (토큰 0 유지)
+    if user.is_guest:
+        return user
+
+    # [Lazy Evaluation] Google 로그인 회원 전용 20시간 쿨타임 토큰 리필 로직
     now = datetime.now(timezone.utc)
-    
-    # DB에 저장된 시간이 timezone-aware인지 확인하여 계산
     last_refill = user.last_token_refill_at
     if last_refill.tzinfo is None:
         last_refill = last_refill.replace(tzinfo=timezone.utc)
@@ -41,7 +51,6 @@ async def get_current_user(
     time_since_last_refill = now - last_refill
 
     if time_since_last_refill >= timedelta(hours=TOKEN_COOLDOWN_HOURS):
-        # 토큰 리필 및 시간 갱신
         user.llm_tokens = 1
         user.last_token_refill_at = now
         db.add(user)

@@ -24,7 +24,7 @@ async def start_movement(
     출발 시 current_spot_id는 None이 되고, target_spot_id와 arrival_time이 설정됩니다.
     """
     # 이미 이동 중인지 확인
-    if current_user.target_spot_id and current_user.arrival_time:
+    if current_user.target_spot_id is not None and current_user.arrival_time:
         now = datetime.now(timezone.utc)
         arrival = current_user.arrival_time
         if arrival.tzinfo is None:
@@ -80,7 +80,7 @@ async def start_movement(
     return {
         "message": f"{target_spot_name}을(를) 향해 시공간 워프를 시작합니다.",
         "target_spot_id": target_spot_id,
-        "arrival_time": arrival_time
+        "arrival_time": arrival_time.isoformat()
     }
 
 @router.post("/arrive", status_code=status.HTTP_200_OK)
@@ -93,7 +93,7 @@ async def confirm_arrival(
     도착 예정 시간이 지났다면, 이동을 완료 처리(current_spot_id 갱신)합니다.
     (users.py의 /me API에서 is_arrived를 확인한 프론트엔드가 이 API를 호출하여 도착을 확정 짓습니다)
     """
-    if not current_user.target_spot_id:
+    if current_user.target_spot_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Not currently moving."

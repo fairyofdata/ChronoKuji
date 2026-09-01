@@ -10,11 +10,16 @@ import ShareTicketModal from './ShareTicketModal';
 import PwaInstallBanner from './PwaInstallBanner';
 import { SPOTS, CODEX_ITEMS } from './constants';
 import { AudioEngine } from './audioEngine';
+import { auth, loginWithGoogle, logoutFirebase, onAuthStateChanged, FirebaseUser } from './firebase';
 import { UserState, OmikujiResult, LlmInterpretationResult, CollectedCodexItem } from './types';
+import { parseUtcDate } from './utils/date';
+import { API_BASE_URL } from './config';
 import './App.css';
 
 export default function App() {
   const [userId, setUserId] = useState<string | null>(() => localStorage.getItem('omikuz_user_id'));
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
   const [userState, setUserState] = useState<UserState | null>(null);
   const [selectedSpot, setSelectedSpot] = useState<number>(1);
   const [timeLeft, setTimeLeft] = useState<number>(0);
@@ -33,42 +38,91 @@ export default function App() {
   const [isZenMode, setIsZenMode] = useState<boolean>(false);
   const [collectedItems, setCollectedItems] = useState<CollectedCodexItem[]>([]);
 
+  const hasUnlockedAudio = useRef<boolean>(false);
+  const userStateRef = useRef<UserState | null>(null);
+  userStateRef.current = userState;
+
   // 1. First Audio Interaction Unlock (Web Audio Autoplay Policy)
   useEffect(() => {
     const handleFirstUserGesture = () => {
-      if (userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && !userState?.is_arrived) {
+      if (hasUnlockedAudio.current) return;
+      hasUnlockedAudio.current = true;
+
+      const state = userStateRef.current;
+      if (state?.target_spot_id !== null && state?.target_spot_id !== undefined && !state?.is_arrived) {
         AudioEngine.playTravelMusic();
-      } else if (userState?.current_spot_id) {
-        AudioEngine.playSpotMusic(userState.current_spot_id);
+      } else if (state?.current_spot_id) {
+        AudioEngine.playSpotMusic(state.current_spot_id);
       } else {
         AudioEngine.playLobbyMusic();
       }
-      window.removeEventListener('click', handleFirstUserGesture);
-      window.removeEventListener('touchstart', handleFirstUserGesture);
     };
 
-    window.addEventListener('click', handleFirstUserGesture);
-    window.addEventListener('touchstart', handleFirstUserGesture);
+    window.addEventListener('click', handleFirstUserGesture, { once: true });
+    window.addEventListener('touchstart', handleFirstUserGesture, { once: true });
     return () => {
       window.removeEventListener('click', handleFirstUserGesture);
       window.removeEventListener('touchstart', handleFirstUserGesture);
     };
-  }, [userState]);
+  }, []);
 
-  // 2. User Authentication & Profile Synchronization
+  // 2. Firebase Auth Listener & Profile Synchronization
   useEffect(() => {
-    let currentId = userId;
-    if (!currentId) {
-      currentId = crypto.randomUUID();
-      localStorage.setItem('omikuz_user_id', currentId);
-      setUserId(currentId);
-    }
-    fetchUserState(currentId);
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      setFirebaseUser(fbUser);
+      if (fbUser) {
+        // Google 로그인 사용자: 백엔드와 동기화
+        const guestUuid = localStorage.getItem('omikuz_guest_uuid') || undefined;
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v1/users/firebase-auth`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              firebase_uid: fbUser.uid,
+              email: fbUser.email,
+              display_name: fbUser.displayName,
+              photo_url: fbUser.photoURL,
+              guest_uuid: guestUuid
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setUserId(data.user_id);
+            localStorage.setItem('omikuz_user_id', data.user_id);
+            fetchUserState(data.user_id);
+          }
+        } catch (e) {
+          console.error("Firebase auth sync error:", e);
+        }
+      } else {
+        // 게스트 유저: 로컬 UUID 기반 초기화
+        let guestId = localStorage.getItem('omikuz_guest_uuid');
+        if (!guestId) {
+          guestId = crypto.randomUUID();
+          localStorage.setItem('omikuz_guest_uuid', guestId);
+        }
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v1/users/auth?client_uuid=${guestId}`, { method: 'POST' });
+          if (res.ok) {
+            const data = await res.json();
+            setUserId(data.user_id);
+            localStorage.setItem('omikuz_user_id', data.user_id);
+            fetchUserState(data.user_id);
+          }
+        } catch (e) {
+          console.error("Guest auth error:", e);
+          setUserId(guestId);
+          fetchUserState(guestId);
+        }
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const fetchUserState = async (uid: string) => {
     try {
-      const res = await fetch('/api/v1/users/me', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
         headers: { 'x-user-id': uid }
       });
       if (res.ok) {
@@ -78,6 +132,31 @@ export default function App() {
           setSelectedSpot(data.current_spot_id);
         }
       }
+    } catch (e) {
+      console.error("fetchUserState error:", e);
+    }
+  };
+
+  // Google Login Action
+  const handleGoogleLogin = async () => {
+    setIsLoggingIn(true);
+    try {
+      await loginWithGoogle();
+    } catch (e: any) {
+      if (e?.code !== 'auth/popup-closed-by-user') {
+        alert("구글 로그인 중 오류가 발생했습니다: " + (e?.message || e));
+      }
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  // Google Logout Action
+  const handleGoogleLogout = async () => {
+    try {
+      await logoutFirebase();
+      setOmikujiResult(null);
+      setLlmResult(null);
     } catch (e) {
       console.error(e);
     }
@@ -90,25 +169,63 @@ export default function App() {
       return;
     }
 
-    const interval = setInterval(() => {
-      const now = new Date().getTime();
-      const arrival = new Date(userState.arrival_time!).getTime();
-      const diff = Math.max(0, Math.ceil((arrival - now) / 1000));
+    const arrivalMs = parseUtcDate(userState.arrival_time);
+    if (!arrivalMs) {
+      setTimeLeft(0);
+      return;
+    }
+
+    const updateTimer = () => {
+      const nowMs = Date.now();
+      const diff = Math.max(0, Math.ceil((arrivalMs - nowMs) / 1000));
       setTimeLeft(diff);
 
       if (diff <= 0) {
-        clearInterval(interval);
         if (userId) fetchUserState(userId);
       }
-    }, 1000);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [userState]);
+  }, [userState?.arrival_time, userState?.is_arrived, userId]);
+
+  // 4. Token 20-Hour Refill Countdown Timer
+  useEffect(() => {
+    if (!userState || userState.is_guest || userState.llm_tokens >= 1 || !userState.last_token_refill_at) {
+      setTokenTimeLeft(0);
+      return;
+    }
+
+    const lastRefillMs = parseUtcDate(userState.last_token_refill_at);
+    if (!lastRefillMs) {
+      setTokenTimeLeft(0);
+      return;
+    }
+
+    const nextRefillMs = lastRefillMs + (20 * 60 * 60 * 1000);
+
+    const updateTokenTimer = () => {
+      const nowMs = Date.now();
+      const diff = Math.max(0, Math.ceil((nextRefillMs - nowMs) / 1000));
+      setTokenTimeLeft(diff);
+
+      if (diff <= 0) {
+        if (userId) fetchUserState(userId);
+      }
+    };
+
+    updateTokenTimer();
+    const interval = setInterval(updateTokenTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [userState?.last_token_refill_at, userState?.is_guest, userState?.llm_tokens, userId]);
 
   // 4. Codex Items Synchronization from History
   useEffect(() => {
     if (userId) {
-      fetch('/api/v1/omikuji/history', { headers: { 'x-user-id': userId } })
+      fetch(`${API_BASE_URL}/api/v1/omikuji/history`, { headers: { 'x-user-id': userId } })
         .then(res => res.json())
         .then(data => {
           if (data.histories) {
@@ -138,8 +255,9 @@ export default function App() {
   // 5. Warp Start Handler
   const handleMoveStart = async () => {
     if (!userId) return;
+    hasUnlockedAudio.current = true;
     try {
-      const res = await fetch(`/api/v1/movement/start?target_spot_id=${selectedSpot}`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/movement/start?target_spot_id=${selectedSpot}`, {
         method: 'POST',
         headers: { 'x-user-id': userId }
       });
@@ -164,7 +282,7 @@ export default function App() {
       const headers: Record<string, string> = { 'x-user-id': userId };
       if (isAdmin) headers['x-admin-bypass'] = '486';
 
-      const res = await fetch('/api/v1/movement/arrive', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/movement/arrive`, {
         method: 'POST',
         headers
       });
@@ -196,7 +314,7 @@ export default function App() {
     setIsDrawing(true);
 
     try {
-      const res = await fetch(`/api/v1/omikuji/draw?spot_id=${userState.current_spot_id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/omikuji/draw?spot_id=${userState.current_spot_id}`, {
         method: 'POST',
         headers: { 'x-user-id': userId }
       });
@@ -220,17 +338,23 @@ export default function App() {
   // 8. AI Counseling Interpretation Handler
   const handleInterpret = async (context: string) => {
     if (!userId || !omikujiResult) return;
+    
+    // 게스트 상태인 경우 로그인 팝업 유도
+    if (userState?.is_guest) {
+      handleGoogleLogin();
+      return;
+    }
+
     setIsInterpreting(true);
 
     try {
-      const res = await fetch('/api/v1/interpret', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/interpret/${omikujiResult.history_id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-user-id': userId
         },
         body: JSON.stringify({
-          history_id: omikujiResult.history_id,
           user_context: context
         })
       });
@@ -280,6 +404,9 @@ export default function App() {
         isCodexComplete={isCodexComplete}
         isZenMode={isZenMode}
         setIsZenMode={setIsZenMode}
+        onGoogleLogin={handleGoogleLogin}
+        onGoogleLogout={handleGoogleLogout}
+        isLoggingIn={isLoggingIn}
       />
 
       {/* 3. Main Stage Content */}
@@ -321,8 +448,10 @@ export default function App() {
               {omikujiResult ? (
                 <OmikujiView 
                   result={omikujiResult}
-                  spotId={userState?.current_spot_id || 1}
-                  userTokens={userState?.llm_tokens ?? 3}
+                  spot={currentSpot || SPOTS.find(s => s.id === (userState?.current_spot_id || 1))}
+                  userTokens={userState?.llm_tokens ?? 0}
+                  isGuest={userState?.is_guest ?? true}
+                  onGoogleLogin={handleGoogleLogin}
                   onInterpret={handleInterpret}
                   isInterpreting={isInterpreting}
                   llmResult={llmResult}

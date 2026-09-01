@@ -1,31 +1,35 @@
 import React, { useState } from 'react';
 import { SPOTS } from './constants';
-import { OmikujiResult, LlmInterpretationResult } from './types';
+import { OmikujiResult, LlmInterpretationResult, Spot } from './types';
 
 interface OmikujiViewProps {
   result: OmikujiResult;
-  spotId: number;
-  userTokens: number;
-  onInterpret: (context: string) => Promise<void>;
-  isInterpreting: boolean;
+  spot: Spot | undefined;
   llmResult: LlmInterpretationResult | null;
+  isInterpreting: boolean;
+  onInterpret: (context: string) => void;
   onShare: () => void;
+  userTokens: number;
+  isGuest?: boolean;
+  onGoogleLogin?: () => void;
 }
 
 export default function OmikujiView({ 
   result, 
-  spotId, 
-  userTokens, 
-  onInterpret, 
+  spot, 
+  llmResult, 
   isInterpreting, 
-  llmResult,
-  onShare 
+  onInterpret, 
+  onShare, 
+  userTokens,
+  isGuest = true,
+  onGoogleLogin
 }: OmikujiViewProps) {
   const [userContext, setUserContext] = useState('');
   const [isTied, setIsTied] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
-  const spot = SPOTS.find(s => s.id === spotId);
+  const activeSpot = spot || SPOTS.find(s => s.id === result.spot_id);
   const isBadLuck = result.luck_level === "凶" || result.luck_level === "大凶";
 
   // 운세 등급별 테마 색상 & 뱃지
@@ -61,10 +65,10 @@ export default function OmikujiView({
         <div className="flex justify-between items-start border-b border-gray-700/60 pb-3 mb-4">
           <div>
             <span className="text-[11px] font-bold tracking-widest text-gray-400 uppercase">
-              {spot?.worldName || "Chrono World"} • 神社御神籤
+              {activeSpot?.worldName || "Chrono World"} • 神社御神籤
             </span>
             <h3 className="text-sm font-extrabold text-purple-300">
-              {spot?.locationName}
+              {activeSpot?.locationName}
             </h3>
           </div>
           <div className="flex items-center space-x-1">
@@ -90,10 +94,10 @@ export default function OmikujiView({
 
           {/* Lucky Item / Meta Details */}
           <div className="flex items-center space-x-2 bg-gray-900/80 border border-gray-700/70 px-3 py-2 rounded-2xl text-xs">
-            <img src={spot?.itemImage} alt={spot?.luckyItem} className="w-8 h-8 rounded-lg object-cover shadow" />
+            <img src={activeSpot?.itemImage} alt={activeSpot?.luckyItem} className="w-8 h-8 rounded-lg object-cover shadow" />
             <div className="text-left">
               <span className="text-[10px] text-amber-400 font-bold block">행운의 아이템</span>
-              <span className="text-white font-bold">{spot?.luckyItem}</span>
+              <span className="text-white font-bold">{activeSpot?.luckyItem}</span>
             </div>
           </div>
         </div>
@@ -196,7 +200,7 @@ export default function OmikujiView({
             </h4>
           </div>
           <p className="text-xs text-gray-300 leading-relaxed">
-            이 차원의 '흉'은 다른 평행우주에서 '대길'로 수렴합니다. 신비로운 <span className="text-amber-400 font-bold">{spot?.luckyItem}</span>(이)가 당신의 액운을 흡수하여 새로운 기회로 치환하고 있습니다.
+            이 차원의 '흉'은 다른 평행우주에서 '대길'로 수렴합니다. 신비로운 <span className="text-amber-400 font-bold">{activeSpot?.luckyItem}</span>(이)가 당신의 액운을 흡수하여 새로운 기회로 치환하고 있습니다.
           </p>
         </div>
       )}
@@ -207,15 +211,44 @@ export default function OmikujiView({
           <div className="flex items-center space-x-2">
             <span className="text-xl">🔮</span>
             <h4 className="text-sm sm:text-base font-black text-purple-300">
-              {spot?.worldName} AI 심층 운명 해석
+              {activeSpot?.worldName} AI 심층 운명 해석
             </h4>
           </div>
           <span className="text-[11px] font-bold text-gray-400">
-            소모: 1토큰 (보유: {userTokens}/3)
+            {isGuest ? (
+              <span className="text-amber-400">구글 로그인 시 1회 무료 (20h)</span>
+            ) : (
+              <span>소모: 1토큰 (보유: {userTokens}/1)</span>
+            )}
           </span>
         </div>
 
-        {!llmResult ? (
+        {isGuest ? (
+          /* Guest Google Sign-In Promotion Card */
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-purple-950/60 via-indigo-950/40 to-black/60 border border-purple-500/40 text-center space-y-3 shadow-inner">
+            <div className="flex flex-col items-center space-y-1">
+              <span className="text-2xl">✨</span>
+              <h5 className="text-sm font-bold text-purple-200">
+                내 고민에 맞춤형 AI 점괘 풀이를 받아보세요
+              </h5>
+              <p className="text-xs text-gray-400 max-w-md leading-relaxed">
+                구글 로그인 시 <strong>20시간마다 1회 무료</strong>로 {activeSpot?.worldName} 고유 페르소나의 맞춤형 심층 조언을 받으실 수 있습니다.
+              </p>
+            </div>
+            <button
+              onClick={onGoogleLogin}
+              className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs sm:text-sm transition shadow-lg shadow-purple-500/30 hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              <svg className="w-4 h-4 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span>Google 로그인하고 AI 풀이 열기</span>
+            </button>
+          </div>
+        ) : !llmResult ? (
           <div className="flex flex-col space-y-2.5">
             <textarea
               value={userContext}
@@ -233,14 +266,14 @@ export default function OmikujiView({
                   : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-500/30'
               }`}
             >
-              <span>{isInterpreting ? "✨ 차원의 지혜를 불러오는 중..." : "AI 심층 해석 의뢰하기 (1 토큰)"}</span>
+              <span>{isInterpreting ? "✨ 차원의 지혜를 불러오는 중..." : userTokens <= 0 ? "⏳ 오늘의 AI 풀이 토큰 충전 대기 중 (20시간 주기)" : "AI 심층 해석 의뢰하기 (1 토큰)"}</span>
             </button>
           </div>
         ) : (
           <div className="p-4 bg-gray-900/90 rounded-2xl border border-purple-500/40 text-left space-y-2 animate-fade-in">
             <div className="flex items-center justify-between border-b border-gray-800 pb-2">
               <span className="text-xs font-bold text-amber-300">
-                📜 {llmResult.world_concept_title || `${spot?.worldName}의 전언`}
+                📜 {llmResult.world_concept_title || `${activeSpot?.worldName}의 전언`}
               </span>
               <span className="text-[10px] text-gray-400">Gemini 2.5 Flash</span>
             </div>
