@@ -14,9 +14,10 @@ import { auth, loginWithGoogle, logoutFirebase, onAuthStateChanged, FirebaseUser
 import { UserState, OmikujiResult, LlmInterpretationResult, CollectedCodexItem } from './types';
 import { parseUtcDate } from './utils/date';
 import { API_BASE_URL } from './config';
+import { ToastProvider, useToast } from './Toast';
 import './App.css';
 
-export default function App() {
+function AppContent() {
   const [userId, setUserId] = useState<string | null>(() => localStorage.getItem('omikuz_user_id'));
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
@@ -38,6 +39,7 @@ export default function App() {
   const [isZenMode, setIsZenMode] = useState<boolean>(false);
   const [collectedItems, setCollectedItems] = useState<CollectedCodexItem[]>([]);
 
+  const { showToast } = useToast();
   const hasUnlockedAudio = useRef<boolean>(false);
   const userStateRef = useRef<UserState | null>(null);
   userStateRef.current = userState;
@@ -60,91 +62,115 @@ export default function App() {
 
     window.addEventListener('click', handleFirstUserGesture, { once: true });
     window.addEventListener('touchstart', handleFirstUserGesture, { once: true });
+    window.addEventListener('keydown', handleFirstUserGesture, { once: true });
+
     return () => {
       window.removeEventListener('click', handleFirstUserGesture);
       window.removeEventListener('touchstart', handleFirstUserGesture);
+      window.removeEventListener('keydown', handleFirstUserGesture);
     };
   }, []);
 
-  // 2. Firebase Auth Listener & Profile Synchronization
+  // 2. Fetch User State Helper
+  const fetchUserState = async (uid: string) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/users/state`, {
+        headers: { 'x-user-id': uid }
+      });
+      if (res.ok) {
+        const state: UserState = await res.json();
+        setUserState(state);
+
+        // BGM synchronization
+        if (hasUnlockedAudio.current) {
+          if (state.target_spot_id !== null && state.target_spot_id !== undefined && !state.is_arrived) {
+            AudioEngine.playTravelMusic();
+          } else if (state.current_spot_id) {
+            AudioEngine.playSpotMusic(state.current_spot_id);
+          } else {
+            AudioEngine.playLobbyMusic();
+          }
+        }
+      }
+    } catch (e) {
+      console.error("fetchUserState Error:", e);
+    }
+  };
+
+  // Auth Initialization & Firebase Sync
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      setFirebaseUser(fbUser);
-      if (fbUser) {
-        // Google 로그인 사용자: 백엔드와 동기화
-        const guestUuid = localStorage.getItem('omikuz_guest_uuid') || undefined;
-        try {
-          const res = await fetch(`${API_BASE_URL}/api/v1/users/firebase-auth`, {
+    const unsubscribe = onAuthStateChanged(auth, async (fUser) => {
+      setFirebaseUser(fUser);
+
+      try {
+        if (fUser) {
+          // Google Authenticated User Login
+          const idToken = await fUser.getIdToken();
+          const res = await fetch(`${API_BASE_URL}/api/v1/users/auth`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${idToken}`
+            },
             body: JSON.stringify({
-              firebase_uid: fbUser.uid,
-              email: fbUser.email,
-              display_name: fbUser.displayName,
-              photo_url: fbUser.photoURL,
-              guest_uuid: guestUuid
+              firebase_uid: fUser.uid,
+              email: fUser.email,
+              display_name: fUser.displayName
             })
           });
+
           if (res.ok) {
             const data = await res.json();
             setUserId(data.user_id);
             localStorage.setItem('omikuz_user_id', data.user_id);
             fetchUserState(data.user_id);
           }
-        } catch (e) {
-          console.error("Firebase auth sync error:", e);
-        }
-      } else {
-        // 게스트 유저: 로컬 UUID 기반 초기화
-        let guestId = localStorage.getItem('omikuz_guest_uuid');
-        if (!guestId) {
-          guestId = crypto.randomUUID();
-          localStorage.setItem('omikuz_guest_uuid', guestId);
-        }
-        try {
-          const res = await fetch(`${API_BASE_URL}/api/v1/users/auth?client_uuid=${guestId}`, { method: 'POST' });
-          if (res.ok) {
-            const data = await res.json();
-            setUserId(data.user_id);
-            localStorage.setItem('omikuz_user_id', data.user_id);
-            fetchUserState(data.user_id);
+        } else {
+          // Guest User Login / Restoration
+          const savedUid = localStorage.getItem('omikuz_user_id');
+          if (savedUid) {
+            setUserId(savedUid);
+            fetchUserState(savedUid);
+          } else {
+            const res = await fetch(`${API_BASE_URL}/api/v1/users/auth`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              setUserId(data.user_id);
+              localStorage.setItem('omikuz_user_id', data.user_id);
+              fetchUserState(data.user_id);
+            }
           }
-        } catch (e) {
-          console.error("Guest auth error:", e);
-          setUserId(guestId);
-          fetchUserState(guestId);
         }
+      } catch (err) {
+        console.error("Auth init error:", err);
       }
     });
 
     return () => unsubscribe();
   }, []);
 
-  const fetchUserState = async (uid: string) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
-        headers: { 'x-user-id': uid }
-      });
-      if (res.ok) {
-        const data: UserState = await res.json();
-        setUserState(data);
-        if (data.current_spot_id) {
-          setSelectedSpot(data.current_spot_id);
-        }
-      }
-    } catch (e) {
-      console.error("fetchUserState error:", e);
-    }
-  };
-
   // Google Login Action
   const handleGoogleLogin = async () => {
     setIsLoggingIn(true);
     try {
-      await loginWithGoogle();
+      const user = await loginWithGoogle();
+      if (user) {
+        showToast({
+          type: 'success',
+          title: '🔑 로그인 성공',
+          message: `${user.displayName || '여행자'}님 환영합니다!\n20시간마다 1회 무료 AI 심층 풀이가 충전됩니다.`
+        });
+      }
     } catch (e: any) {
       if (e?.code !== 'auth/popup-closed-by-user') {
-        alert("구글 로그인 중 오류가 발생했습니다: " + (e?.message || e));
+        showToast({
+          type: 'error',
+          title: '로그인 실패',
+          message: e?.message || "구글 로그인 중 오류가 발생했습니다."
+        });
       }
     } finally {
       setIsLoggingIn(false);
@@ -157,6 +183,11 @@ export default function App() {
       await logoutFirebase();
       setOmikujiResult(null);
       setLlmResult(null);
+      showToast({
+        type: 'info',
+        title: '로그아웃 완료',
+        message: '게스트 모드로 전환되었습니다.'
+      });
     } catch (e) {
       console.error(e);
     }
@@ -222,7 +253,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, [userState?.last_token_refill_at, userState?.is_guest, userState?.llm_tokens, userId]);
 
-  // 4. Codex Items Synchronization from History
+  // 5. Codex Items Synchronization from History
   useEffect(() => {
     if (userId) {
       fetch(`${API_BASE_URL}/api/v1/omikuji/history`, { headers: { 'x-user-id': userId } })
@@ -252,12 +283,14 @@ export default function App() {
   const collectedNames = new Set(collectedItems.map(item => item.name));
   const isCodexComplete = CODEX_ITEMS.every(item => collectedNames.has(item.name));
 
-  // 5. Warp Start Handler
-  const handleMoveStart = async () => {
+  // 6. Warp Start Handler
+  const handleMoveStart = async (customSpotId?: number) => {
     if (!userId) return;
+    const targetId = customSpotId !== undefined ? customSpotId : selectedSpot;
     hasUnlockedAudio.current = true;
+
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/movement/start?target_spot_id=${selectedSpot}`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/movement/start?target_spot_id=${targetId}`, {
         method: 'POST',
         headers: { 'x-user-id': userId }
       });
@@ -266,16 +299,30 @@ export default function App() {
         setLlmResult(null);
         await fetchUserState(userId);
         AudioEngine.playTravelMusic();
+
+        const destName = targetId === 0 
+          ? "차원의 균열 (성소)" 
+          : (SPOTS.find(s => s.id === targetId)?.name || "목적지");
+
+        showToast({
+          type: 'info',
+          title: '⏳ 시공간 워프 개시',
+          message: `[${destName}]을(를) 향해 도약을 시작합니다. (60초 소요)`
+        });
       } else {
         const err = await res.json();
-        alert(err.detail || "이동 시작에 실패했습니다.");
+        showToast({
+          type: 'error',
+          title: '워프 실패',
+          message: err.detail || "이동 시작에 실패했습니다."
+        });
       }
     } catch (e) {
       console.error(e);
     }
   };
 
-  // 6. Warp Arrival Handler
+  // 7. Warp Arrival Handler
   const handleArrive = async () => {
     if (!userId) return;
     try {
@@ -291,19 +338,34 @@ export default function App() {
         await fetchUserState(userId);
         if (data.current_spot_id) {
           AudioEngine.playSpotMusic(data.current_spot_id);
+          const spot = SPOTS.find(s => s.id === data.current_spot_id);
+          showToast({
+            type: 'success',
+            title: '🎉 차원 진입 성공',
+            message: `[${spot?.worldName}] ${spot?.locationName}에 무사히 도착했습니다!`
+          });
         } else {
           AudioEngine.playLobbyMusic();
+          showToast({
+            type: 'shrine',
+            title: '⛩️ 성소 귀환 완료',
+            message: '차원의 균열 성소로 안전하게 귀환했습니다.'
+          });
         }
       } else {
         const err = await res.json();
-        alert(err.detail || "도착 처리에 실패했습니다.");
+        showToast({
+          type: 'error',
+          title: '도착 처리 실패',
+          message: err.detail || "도착 처리에 실패했습니다."
+        });
       }
     } catch (e) {
       console.error(e);
     }
   };
 
-  // 7. Omikuji Draw Triggers
+  // 8. Omikuji Draw Triggers
   const handleDrawOmikuji = () => {
     setIsShakeModalOpen(true);
   };
@@ -327,6 +389,12 @@ export default function App() {
         if (userState.current_spot_id === 9 && data.luck_level === '大吉') {
           AudioEngine.playCelebrationMusic(9);
         }
+
+        showToast({
+          type: data.luck_level === '大吉' ? 'success' : data.luck_level === '凶' || data.luck_level === '大凶' ? 'warning' : 'info',
+          title: `🥠 점괘 [${data.luck_level}] 출현`,
+          message: `운명의 점괘가 펼쳐졌습니다.`
+        });
       }
     } catch (e) {
       console.error(e);
@@ -335,7 +403,7 @@ export default function App() {
     }
   };
 
-  // 8. AI Counseling Interpretation Handler
+  // 9. AI Counseling Interpretation Handler
   const handleInterpret = async (context: string) => {
     if (!userId || !omikujiResult) return;
     
@@ -362,9 +430,18 @@ export default function App() {
         const data: LlmInterpretationResult = await res.json();
         setLlmResult(data);
         fetchUserState(userId);
+        showToast({
+          type: 'success',
+          title: '🔮 AI 심층 해석 완료',
+          message: '세계관 페르소나의 맞춤 조언이 완성되었습니다.'
+        });
       } else {
         const err = await res.json();
-        alert(err.detail || "AI 해석 요청에 실패했습니다.");
+        showToast({
+          type: 'error',
+          title: 'AI 해석 오류',
+          message: err.detail || "AI 해석 요청에 실패했습니다."
+        });
       }
     } catch (e) {
       console.error(e);
@@ -407,107 +484,145 @@ export default function App() {
         onGoogleLogin={handleGoogleLogin}
         onGoogleLogout={handleGoogleLogout}
         isLoggingIn={isLoggingIn}
+        onReturnToRift={() => handleMoveStart(0)}
       />
 
-      {/* 3. Main Stage Content */}
-      <main className="relative z-10 flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-center">
-        {/* Zen Cinema Mode Overlay Notice */}
-        {isZenMode ? (
-          <div 
-            onClick={() => setIsZenMode(false)}
-            className="flex-1 flex flex-col items-center justify-end pb-12 cursor-pointer animate-fade-in"
-          >
-            <div className="bg-black/60 backdrop-blur-md border border-white/20 px-5 py-2.5 rounded-full text-xs font-bold text-gray-200 hover:text-white transition shadow-2xl animate-pulse">
-              🖼️ 감상 모드 작동 중 • 화면을 클릭하면 UI가 복귀합니다
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Left Column: World Navigation & Warp Controls (5 Cols) */}
-            <div className="lg:col-span-5 flex flex-col space-y-4">
-              <MapSelector 
-                userState={userState}
-                selectedSpot={selectedSpot}
-                setSelectedSpot={setSelectedSpot}
-                handleMoveStart={handleMoveStart}
-                handleDrawOmikuji={handleDrawOmikuji}
-                isDrawing={isDrawing}
-                isCodexComplete={isCodexComplete}
-              />
-
+      {/* 3. Main Dynamic Content View (Zen Mode hiding support) */}
+      {!isZenMode && (
+        <main className="relative z-10 flex-1 flex flex-col items-center justify-start p-4 sm:p-6 max-w-xl mx-auto w-full space-y-4 pb-24">
+          {/* A. Traveling Warp State */}
+          {userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && (
+            <div className="w-full">
               <MovementTimer 
                 userState={userState}
                 timeLeft={timeLeft}
+                onArrive={handleArrive}
                 isAdmin={isAdmin}
-                handleArrive={handleArrive}
               />
             </div>
+          )}
 
-            {/* Right Column: Omikuji Fortune & AI Counseling Card (7 Cols) */}
-            <div className="lg:col-span-7 flex flex-col space-y-4">
-              {omikujiResult ? (
-                <OmikujiView 
-                  result={omikujiResult}
-                  spot={currentSpot || SPOTS.find(s => s.id === (userState?.current_spot_id || 1))}
-                  userTokens={userState?.llm_tokens ?? 0}
-                  isGuest={userState?.is_guest ?? true}
-                  onGoogleLogin={handleGoogleLogin}
-                  onInterpret={handleInterpret}
-                  isInterpreting={isInterpreting}
-                  llmResult={llmResult}
-                  onShare={() => setIsShareModalOpen(true)}
-                />
-              ) : (
-                <div className="bg-black/40 backdrop-blur-2xl p-8 sm:p-12 rounded-3xl border border-white/10 shadow-2xl text-center flex flex-col items-center justify-center min-h-[360px] space-y-4">
-                  <span className="text-5xl animate-bounce-slow">🥠</span>
-                  <div>
-                    <h3 className="text-xl font-black text-white drop-shadow">
-                      {userState?.current_spot_id 
-                        ? "차원에 도착했습니다! 운명의 점괘를 뽑아보세요." 
-                        : "시공간의 틈새에서 여행 준비 중입니다."}
-                    </h3>
-                    <p className="text-xs text-gray-300 max-w-md mx-auto mt-1 leading-relaxed">
-                      {userState?.current_spot_id 
-                        ? "좌측의 [이곳에서 점괘 뽑기] 버튼을 누르고 신비로운 산통을 흔들어 오늘의 운명을 확인하세요." 
-                        : "좌측 메뉴에서 12개 세계관 중 한 곳을 선택하여 초월공학 시공간 워프를 시작하세요."}
-                    </p>
-                  </div>
+          {/* B. Spot Arrived State & Omikuji Box Gacha */}
+          {userState?.current_spot_id && (!userState?.target_spot_id || userState?.is_arrived) && (
+            <div className="w-full flex flex-col space-y-4 animate-fade-in">
+              {/* If fortune not yet drawn */}
+              {!omikujiResult && (
+                <div className="p-6 sm:p-7 rounded-3xl backdrop-blur-2xl bg-black/55 border border-purple-500/30 shadow-2xl flex flex-col items-center text-center space-y-4">
+                  <span className="text-xs font-bold text-purple-300 tracking-wider uppercase">
+                    {currentSpot?.worldName} • 神社
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-black text-white drop-shadow">
+                    {currentSpot?.locationName}
+                  </h2>
+                  <p className="text-xs text-gray-300 max-w-sm leading-relaxed">
+                    이곳의 시공간 에너지가 응축되어 있습니다. 운명의 산통을 흔들어 오늘의 차원 점괘를 확인하세요!
+                  </p>
+
+                  <button
+                    onClick={handleDrawOmikuji}
+                    disabled={isDrawing}
+                    className={`w-full py-4 rounded-2xl font-black text-sm tracking-wider uppercase transition shadow-2xl flex items-center justify-center space-x-2 ${
+                      isDrawing 
+                        ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-amber-400 via-orange-500 to-purple-600 hover:from-amber-300 hover:to-purple-500 text-white shadow-amber-500/40 hover:scale-102 active:scale-98'
+                    }`}
+                  >
+                    <span>🥠</span>
+                    <span>{isDrawing ? "점괘 뽑는 중..." : "운명의 산통 흔들기 (점괘 뽑기)"}</span>
+                  </button>
                 </div>
               )}
+
+              {/* Drawn Fortune Details */}
+              {omikujiResult && (
+                <OmikujiView 
+                  result={omikujiResult}
+                  spot={currentSpot || undefined}
+                  llmResult={llmResult}
+                  isInterpreting={isInterpreting}
+                  onInterpret={handleInterpret}
+                  onShare={() => setIsShareModalOpen(true)}
+                  userTokens={userState?.llm_tokens || 0}
+                  isGuest={userState?.is_guest}
+                  onGoogleLogin={handleGoogleLogin}
+                />
+              )}
             </div>
-          </div>
-        )}
-      </main>
+          )}
 
-      {/* 4. Global Modals */}
-      <FortuneShakeModal 
-        isOpen={isShakeModalOpen}
-        spotId={userState?.current_spot_id || 1}
-        onComplete={handleCompleteShakeAndDraw}
-      />
+          {/* C. Dimensional Rift (Lobby) & World Selector */}
+          {(!userState?.current_spot_id && (!userState?.target_spot_id || userState?.is_arrived)) && (
+            <div className="w-full flex flex-col space-y-4 animate-fade-in">
+              <MapSelector 
+                selectedSpot={selectedSpot}
+                onSelectSpot={setSelectedSpot}
+                onStartMove={handleMoveStart}
+                userState={userState}
+              />
+            </div>
+          )}
 
+          {/* D. Bottom World Warp Navigation (Available when at a spot) */}
+          {userState?.current_spot_id && (!userState?.target_spot_id || userState?.is_arrived) && (
+            <div className="w-full mt-4">
+              <div className="p-4 rounded-3xl backdrop-blur-xl bg-black/40 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-left">
+                  <span className="text-[10px] text-gray-400 font-bold block">다른 세계관으로 이동</span>
+                  <span className="text-xs text-gray-200 font-bold">성소로 귀환하거나 새로운 차원으로 도약하세요</span>
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={() => handleMoveStart(0)}
+                    className="flex-1 sm:flex-none text-xs font-bold px-3.5 py-2 rounded-xl bg-purple-900/60 hover:bg-purple-800 border border-purple-500/50 text-purple-200 transition shadow"
+                  >
+                    ⛩️ 차원의 균열로 귀환 (60초)
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+      )}
+
+      {/* 4. Modals */}
       <CodexModal 
         isOpen={isCodexModalOpen}
         onClose={() => setIsCodexModalOpen(false)}
         collectedItems={collectedItems}
-        isComplete={isCodexComplete}
+        isCodexComplete={isCodexComplete}
       />
 
       <HistoryModal 
         isOpen={isHistoryModalOpen}
         onClose={() => setIsHistoryModalOpen(false)}
         userId={userId}
-        currentSpotId={userState?.current_spot_id}
       />
 
-      <ShareTicketModal 
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        result={omikujiResult}
+      <FortuneShakeModal 
+        isOpen={isShakeModalOpen}
         spotId={userState?.current_spot_id || 1}
+        onComplete={handleCompleteShakeAndDraw}
       />
 
+      {omikujiResult && (
+        <ShareTicketModal 
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          result={omikujiResult}
+          spot={currentSpot || undefined}
+        />
+      )}
+
+      {/* PWA Install Banner */}
       <PwaInstallBanner />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
   );
 }

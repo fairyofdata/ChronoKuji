@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserState } from './types';
 import { AudioEngine } from './audioEngine';
+import { useToast } from './Toast';
 
 interface HeaderProps {
   userState: UserState | null;
@@ -16,6 +17,7 @@ interface HeaderProps {
   onGoogleLogin: () => void;
   onGoogleLogout: () => void;
   isLoggingIn?: boolean;
+  onReturnToRift?: () => void;
 }
 
 export default function Header({ 
@@ -31,18 +33,31 @@ export default function Header({
   setIsZenMode,
   onGoogleLogin,
   onGoogleLogout,
-  isLoggingIn = false
+  isLoggingIn = false,
+  onReturnToRift
 }: HeaderProps) {
   const [isAudioMuted, setIsAudioMuted] = useState(AudioEngine.isMuted());
+  const { showToast } = useToast();
+  
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    return `${h > 0 ? `${h}시간 ` : ''}${m}분 ${s}초`;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
   const streakDays = userState?.streak_days || 1;
   const isGuest = userState?.is_guest ?? true;
+
+  const handleRestrictedClick = (featureName: string) => {
+    showToast({
+      type: 'shrine',
+      title: `🔒 ${featureName} 열람 제한`,
+      message: `${featureName}은 시공간의 성소인 '차원의 균열'에서만 열람할 수 있습니다.`,
+      actionText: onReturnToRift ? '성소로 귀환하기' : undefined,
+      onAction: onReturnToRift
+    });
+  };
 
   return (
     <header className="relative z-30 p-3 sm:p-4 bg-black/40 backdrop-blur-xl border-b border-purple-500/20 shadow-2xl transition-all duration-300">
@@ -82,11 +97,11 @@ export default function Header({
             <span>{streakDays}일 연속 접속</span>
           </div>
 
-          {/* Codex Button (차원의 균열 성소에서만 열람 가능) */}
+          {/* Codex Button */}
           <button 
             onClick={() => {
               if (userState?.current_spot_id) {
-                alert("📖 [차원 럭키 아이템 도감]은 시공간의 성소인 '차원의 균열'에서만 열람할 수 있습니다.\n\n아래 워프 메뉴에서 '차원의 균열로 귀환'을 선택해 이동하세요.");
+                handleRestrictedClick("차원 럭키 아이템 도감");
               } else {
                 onOpenCodex();
               }
@@ -105,12 +120,12 @@ export default function Header({
             <span className="text-amber-400 font-black">({codexCount}/11)</span>
           </button>
 
-          {/* Fate History Archive Button (차원의 균열 성소에서만 열람 가능) */}
+          {/* Fate History Archive Button */}
           {onOpenHistory && (
             <button
               onClick={() => {
                 if (userState?.current_spot_id) {
-                  alert("📜 [차원 운명 기록보관소]는 시공간의 성소인 '차원의 균열'에서만 열람할 수 있습니다.\n\n아래 워프 메뉴에서 '차원의 균열로 귀환'을 선택해 이동하세요.");
+                  handleRestrictedClick("차원 운명 기록보관소");
                 } else {
                   onOpenHistory();
                 }

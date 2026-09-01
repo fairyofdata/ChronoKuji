@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SPOTS } from './constants';
 import { OmikujiResult, LlmInterpretationResult, Spot } from './types';
+import { useToast } from './Toast';
 
 interface OmikujiViewProps {
   result: OmikujiResult;
@@ -27,16 +28,28 @@ export default function OmikujiView({
 }: OmikujiViewProps) {
   const [userContext, setUserContext] = useState('');
   const [isTied, setIsTied] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
+  const [isTieAnimating, setIsTieAnimating] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const { showToast } = useToast();
 
   const activeSpot = spot || SPOTS.find(s => s.id === result.spot_id);
+  const isGreatLuck = result.luck_level === "大吉";
   const isBadLuck = result.luck_level === "凶" || result.luck_level === "大凶";
+
+  // 대길일 때 황금 컨페티 파티클 연출 트리거
+  useEffect(() => {
+    if (isGreatLuck) {
+      setShowConfetti(true);
+      const timer = setTimeout(() => setShowConfetti(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [isGreatLuck]);
 
   // 운세 등급별 테마 색상 & 뱃지
   const getLuckBadgeStyle = (level: string) => {
     switch (level) {
       case '大吉':
-        return 'bg-gradient-to-r from-red-600 to-amber-500 text-white shadow-amber-500/50';
+        return 'bg-gradient-to-r from-red-600 via-amber-500 to-yellow-400 text-white shadow-amber-500/60 ring-2 ring-amber-300 animate-pulse';
       case '中吉':
         return 'bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-orange-500/40';
       case '小吉':
@@ -53,14 +66,73 @@ export default function OmikujiView({
     }
   };
 
+  // 점괘 묶기(結び) 액막이 실행
+  const handleTieFortune = () => {
+    if (isTied || isTieAnimating) return;
+    setIsTieAnimating(true);
+    if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
+      window.navigator.vibrate([50, 40, 80]);
+    }
+    setTimeout(() => {
+      setIsTieAnimating(false);
+      setIsTied(true);
+      showToast({
+        type: 'shrine',
+        title: '⛩️ 액막이 결계 완료',
+        message: '불길한 점괘를 차원의 결계에 묶어 액을 털어냈습니다.\n이제 길한 새로운 기운이 당신에게 깃듭니다.'
+      });
+    }, 1200);
+  };
+
+  // 점괘 텍스트 복사하기
+  const handleCopyFortuneText = () => {
+    const text = `🥠 [ChronoKuji 차원 오미쿠지]\n차원: ${activeSpot?.worldName} (${activeSpot?.locationName})\n등급: ${result.luck_level}\n행운의 아이템: ${activeSpot?.luckyItem}\n\n"${result.meta_info?.poem || result.original_text}"\n\n지금 차원 점괘 뽑기 👉 https://chronokuji.web.app`;
+    navigator.clipboard.writeText(text).then(() => {
+      showToast({
+        type: 'success',
+        title: '📋 복사 완료',
+        message: '점괘 내용이 클립보드에 복사되었습니다.'
+      });
+    });
+  };
+
   return (
-    <div className="relative animate-fade-in flex flex-col space-y-4 text-left">
+    <div className="relative animate-fade-in flex flex-col space-y-4 text-left select-none">
+      {/* Confetti Explosion Layer for 大吉 */}
+      {showConfetti && (
+        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+          {Array.from({ length: 30 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute animate-confetti text-lg"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `-20px`,
+                animationDelay: `${Math.random() * 2}s`,
+                animationDuration: `${2 + Math.random() * 2}s`
+              }}
+            >
+              {['✨', '🎉', '🌟', '🪙', '🎊', '💫'][i % 6]}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* 1. Main Omikuji Scroll Card */}
       <div className={`p-6 sm:p-7 rounded-3xl backdrop-blur-2xl border shadow-2xl transition-all duration-700 relative overflow-hidden ${
-        isBadLuck 
+        isTied 
+          ? 'bg-emerald-950/40 border-emerald-500/40 shadow-emerald-950/60'
+          : isBadLuck 
           ? 'bg-purple-950/60 border-purple-500/50 shadow-purple-950/90' 
           : 'bg-black/50 border-white/15'
       }`}>
+        {/* Tied Ribbon Effect Overlay */}
+        {isTied && (
+          <div className="absolute top-4 right-4 z-10 flex items-center space-x-1 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-[11px] font-extrabold backdrop-blur-md animate-pulse">
+            <span>🎗️ 차원의 결계에 액막이 묶음 완료</span>
+          </div>
+        )}
+
         {/* Decorative Shrine Header */}
         <div className="flex justify-between items-start border-b border-gray-700/60 pb-3 mb-4">
           <div>
@@ -85,8 +157,8 @@ export default function OmikujiView({
             <div className="text-left">
               <p className="text-xs text-gray-400">차원 운명 등급</p>
               <p className="text-sm font-bold text-gray-200">
-                {result.luck_level === '大吉' ? "최상의 대길운이 깃들었습니다!" : 
-                 result.luck_level === '凶' || result.luck_level === '大凶' ? "경계와 성찰의 시간입니다." : 
+                {result.luck_level === '大吉' ? "최상의 대길운이 깃들었습니다! 🎉" : 
+                 result.luck_level === '凶' || result.luck_level === '大凶' ? (isTied ? "액막이 결계로 정화되었습니다." : "경계와 성찰의 시간입니다.") : 
                  "평온하고 길한 기운이 감돕니다."}
               </p>
             </div>
@@ -153,133 +225,121 @@ export default function OmikujiView({
           </div>
         )}
 
-        {/* Traditional Knot / Storage Buttons & Share */}
-        <div className="pt-3 border-t border-gray-800/80 flex flex-wrap justify-between items-center gap-2">
-          <div className="flex space-x-2">
-            <button
-              onClick={() => { setIsTied(true); setIsSaved(false); }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1 ${
-                isTied 
-                  ? 'bg-purple-600 text-white' 
-                  : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
-              }`}
-            >
-              <span>🎋</span>
-              <span>{isTied ? "신사에 묶음 완료" : "신사에 묶어 액막이"}</span>
-            </button>
-            <button
-              onClick={() => { setIsSaved(true); setIsTied(false); }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1 ${
-                isSaved 
-                  ? 'bg-amber-600 text-white' 
-                  : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
-              }`}
-            >
-              <span>👛</span>
-              <span>{isSaved ? "지갑에 소장 완료" : "지갑에 부적으로 보관"}</span>
-            </button>
-          </div>
+        {/* Lucky Direction & Number */}
+        <div className="flex flex-wrap gap-2 text-[11px] font-bold text-gray-300 pt-2 border-t border-gray-800/80">
+          {result.meta_info?.lucky_direction && (
+            <span className="bg-gray-900/80 border border-gray-700/60 px-3 py-1 rounded-xl">
+              🧭 행운의 방위: <span className="text-cyan-300">{result.meta_info.lucky_direction}</span>
+            </span>
+          )}
+          {result.meta_info?.lucky_number && (
+            <span className="bg-gray-900/80 border border-gray-700/60 px-3 py-1 rounded-xl">
+              🎲 행운의 숫자: <span className="text-amber-300">{result.meta_info.lucky_number}</span>
+            </span>
+          )}
+        </div>
 
+        {/* Actions: Copy & Bad Luck Tie Button */}
+        <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-gray-800/80">
           <button
-            onClick={onShare}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center space-x-1 shadow"
+            onClick={handleCopyFortuneText}
+            className="text-xs font-bold px-3 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-600/50 transition flex items-center space-x-1.5 shadow"
           >
-            <span>🎫</span>
-            <span>운명 티켓 공유</span>
+            <span>📋</span>
+            <span>점괘 텍스트 복사</span>
           </button>
+
+          {isBadLuck && !isTied && (
+            <button
+              onClick={handleTieFortune}
+              disabled={isTieAnimating}
+              className={`text-xs font-bold px-3.5 py-2 rounded-xl border transition flex items-center space-x-1.5 shadow-lg ${
+                isTieAnimating
+                  ? 'bg-purple-900/80 border-purple-400 text-purple-200 animate-pulse'
+                  : 'bg-gradient-to-r from-purple-800 to-indigo-700 hover:from-purple-700 hover:to-indigo-600 border-purple-400/60 text-white shadow-purple-900/50'
+              }`}
+            >
+              <span>🎗️</span>
+              <span>{isTieAnimating ? "액막이 결계에 묶는 중..." : "차원의 결계에 액막이 묶기(結び)"}</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 2. Kyo (흉) Reversal Glitch Banner */}
-      {isBadLuck && (
-        <div className="p-5 rounded-3xl bg-gradient-to-r from-purple-900/80 via-black to-indigo-950/80 border border-purple-500/50 shadow-2xl flex flex-col space-y-2 animate-pulse text-left">
+      {/* 2. AI Deep Interpretation Section */}
+      <div className="p-5 sm:p-6 rounded-3xl backdrop-blur-2xl bg-black/60 border border-purple-500/30 shadow-2xl relative overflow-hidden">
+        <div className="flex items-center justify-between mb-3 border-b border-gray-800 pb-2.5">
           <div className="flex items-center space-x-2">
-            <span className="text-2xl animate-spin-slow">🌀</span>
-            <h4 className="text-sm font-black text-purple-300">
-              차원 왜곡 경고: 이세계 반전 구원 프로토콜
+            <span className="text-lg">🔮</span>
+            <h4 className="text-sm font-extrabold text-white">
+              {activeSpot?.worldName} AI 심층 차원 해석
             </h4>
           </div>
-          <p className="text-xs text-gray-300 leading-relaxed">
-            이 차원의 '흉'은 다른 평행우주에서 '대길'로 수렴합니다. 신비로운 <span className="text-amber-400 font-bold">{activeSpot?.luckyItem}</span>(이)가 당신의 액운을 흡수하여 새로운 기회로 치환하고 있습니다.
-          </p>
-        </div>
-      )}
-
-      {/* 3. Deep LLM Counseling Section */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-black/40 backdrop-blur-2xl border border-purple-500/30 shadow-2xl flex flex-col space-y-3">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <span className="text-xl">🔮</span>
-            <h4 className="text-sm sm:text-base font-black text-purple-300">
-              {activeSpot?.worldName} AI 심층 운명 해석
-            </h4>
-          </div>
-          <span className="text-[11px] font-bold text-gray-400">
-            {isGuest ? (
-              <span className="text-amber-400">구글 로그인 시 1회 무료 (20h)</span>
-            ) : (
-              <span>소모: 1토큰 (보유: {userTokens}/1)</span>
-            )}
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-950/80 border border-purple-500/50 text-purple-300">
+            {isGuest ? "게스트 🔒" : `남은 토큰: ${userTokens}개`}
           </span>
         </div>
 
-        {isGuest ? (
-          /* Guest Google Sign-In Promotion Card */
-          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-purple-950/60 via-indigo-950/40 to-black/60 border border-purple-500/40 text-center space-y-3 shadow-inner">
-            <div className="flex flex-col items-center space-y-1">
-              <span className="text-2xl">✨</span>
-              <h5 className="text-sm font-bold text-purple-200">
-                내 고민에 맞춤형 AI 점괘 풀이를 받아보세요
-              </h5>
-              <p className="text-xs text-gray-400 max-w-md leading-relaxed">
-                구글 로그인 시 <strong>20시간마다 1회 무료</strong>로 {activeSpot?.worldName} 고유 페르소나의 맞춤형 심층 조언을 받으실 수 있습니다.
+        {llmResult ? (
+          <div className="space-y-3 animate-fade-in text-xs leading-relaxed text-gray-300">
+            <div className="p-3 bg-purple-950/40 border border-purple-500/40 rounded-2xl">
+              <span className="text-[10px] font-bold text-amber-400 block mb-1">
+                ✦ {llmResult.world_concept_title || "차원의 메시지"}
+              </span>
+              <p className="text-gray-200 font-medium">
+                {llmResult.interpretation}
               </p>
             </div>
-            <button
-              onClick={onGoogleLogin}
-              className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs sm:text-sm transition shadow-lg shadow-purple-500/30 hover:scale-105 active:scale-95 cursor-pointer"
-            >
-              <svg className="w-4 h-4 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-              </svg>
-              <span>Google 로그인하고 AI 풀이 열기</span>
-            </button>
+
+            {llmResult.world_bgm_action && (
+              <p className="text-[11px] text-gray-400 italic">
+                {llmResult.world_bgm_action}
+              </p>
+            )}
           </div>
-        ) : !llmResult ? (
-          <div className="flex flex-col space-y-2.5">
+        ) : isGuest ? (
+          <div className="p-4 bg-gray-900/60 border border-gray-800 rounded-2xl text-center space-y-2">
+            <p className="text-xs text-gray-300">
+              구글 로그인을 하시면 <span className="text-amber-300 font-bold">20시간마다 1회 무료</span>로 세계관 AI 심층 풀이를 받으실 수 있습니다.
+            </p>
+            {onGoogleLogin && (
+              <button
+                onClick={onGoogleLogin}
+                className="text-xs font-bold px-4 py-2 rounded-xl bg-white text-black hover:bg-gray-100 transition shadow-lg inline-flex items-center space-x-1.5"
+              >
+                <span>🔑</span>
+                <span>구글 로그인하고 무료 해석 받기</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs text-gray-400">
+              현재 고민이나 상황을 적어주시면, 해당 세계관 페르소나가 맞춤 심층 해석을 건넵니다.
+            </p>
             <textarea
               value={userContext}
               onChange={(e) => setUserContext(e.target.value)}
-              placeholder="현재 고민하고 계신 일(진로, 연애, 이직, 시험 등)을 적어주시면 해당 세계관의 캐릭터가 점괘를 심층 해석해 드립니다."
+              placeholder="예: 요즘 새로운 시험을 준비 중인데 자꾸 불안해요. 앞으로의 운이 어떨까요?"
               rows={3}
-              className="w-full p-3 bg-gray-900/80 border border-gray-700 rounded-xl text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              maxLength={300}
+              className="w-full bg-gray-950/80 border border-gray-700/80 rounded-2xl p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-400 transition resize-none"
             />
-            <button
-              onClick={() => onInterpret(userContext)}
-              disabled={isInterpreting || userTokens <= 0}
-              className={`w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center space-x-2 ${
-                isInterpreting || userTokens <= 0
-                  ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-500/30'
-              }`}
-            >
-              <span>{isInterpreting ? "✨ 차원의 지혜를 불러오는 중..." : userTokens <= 0 ? "⏳ 오늘의 AI 풀이 토큰 충전 대기 중 (20시간 주기)" : "AI 심층 해석 의뢰하기 (1 토큰)"}</span>
-            </button>
-          </div>
-        ) : (
-          <div className="p-4 bg-gray-900/90 rounded-2xl border border-purple-500/40 text-left space-y-2 animate-fade-in">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-2">
-              <span className="text-xs font-bold text-amber-300">
-                📜 {llmResult.world_concept_title || `${activeSpot?.worldName}의 전언`}
-              </span>
-              <span className="text-[10px] text-gray-400">Gemini 2.5 Flash</span>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] text-gray-500">{userContext.length} / 300자</span>
+              <button
+                onClick={() => onInterpret(userContext)}
+                disabled={isInterpreting || !userContext.trim()}
+                className={`text-xs font-bold px-4 py-2 rounded-xl transition shadow-lg flex items-center space-x-1.5 ${
+                  isInterpreting || !userContext.trim()
+                    ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-900/50'
+                }`}
+              >
+                <span>✨</span>
+                <span>{isInterpreting ? "차원 지혜 해석 중..." : "AI 심층 해석 의뢰하기 (토큰 1개)"}</span>
+              </button>
             </div>
-            <p className="text-xs sm:text-sm text-gray-200 whitespace-pre-line leading-relaxed font-sans">
-              {llmResult.interpretation}
-            </p>
           </div>
         )}
       </div>
