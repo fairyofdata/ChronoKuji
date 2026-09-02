@@ -15,11 +15,14 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
-    # 2. 마스터 데이터(스팟)가 비어있으면 자동 시딩
+    # 2. 마스터 데이터(12개 스팟 & 84개 맞춤 오미쿠지) 확인 및 자동 갱신
     async with AsyncSessionLocal() as db:
-        res = await db.execute(select(Spot).limit(1))
-        first_spot = res.scalars().first()
-        if not first_spot:
+        res = await db.execute(select(Spot))
+        spots = res.scalars().all()
+        master_res = await db.execute(select(OmikujiMaster))
+        masters = master_res.scalars().all()
+        if len(spots) != 12 or len(masters) != 84:
+            print(f"🔄 마스터 데이터 버전 갱신 필요 (현재 Spots: {len(spots)}, Masters: {len(masters)}). 12대 세계관 84종 맞춤 오미쿠지 자동 시딩 실행!")
             await seed_dummy_data()
             
     yield
@@ -45,6 +48,11 @@ app.include_router(users.router)
 app.include_router(movement.router)
 app.include_router(omikuji.router)
 app.include_router(interpret.router)
+
+@app.post("/api/v1/admin/reseed")
+async def admin_reseed():
+    await seed_dummy_data()
+    return {"status": "success", "message": "12대 세계관 맞춤 오미쿠지 84종 데이터 시딩 완료"}
 
 @app.get("/")
 async def root():

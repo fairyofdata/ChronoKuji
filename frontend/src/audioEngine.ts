@@ -6,6 +6,7 @@ let ytPlayer: any = null;
 let isYtReady: boolean = false;
 let currentSynthNode: { source: AudioNode; gain: GainNode } | null = null;
 let currentPlayingUrl: string | null = null;
+let currentRequestId: number = 0; // 동시성 레이스 컨디션 방지용 세대 토큰
 
 // 1. 전역 오디오 싱글톤 관리
 function getGlobalAudio(): HTMLAudioElement {
@@ -50,7 +51,7 @@ function initYouTubePlayer() {
         height: '1',
         width: '1',
         playerVars: {
-          autoplay: 1,
+          autoplay: 0, // 초기 자동 재생 방지
           controls: 0,
           loop: 1,
           playsinline: 1,
@@ -162,13 +163,22 @@ function stopAmbientSynth() {
   }
 }
 
-// 4. [핵심] 3단계 스마트 트랙 라우터
+// 4. [핵심] 레이스 컨디션 및 중복 재생을 완벽 차단하는 스마트 트랙 라우터
 async function playSmartTrack(mp3Path: string, youtubeId: string, fallbackSpotId: number = 0) {
   if (isMuted) return;
 
   const player = getGlobalAudio();
 
-  // 기존 음원 정지
+  // 이미 같은 트랙이 정상 재생 중인 경우 불필요한 재시작 방지
+  if (currentPlayingUrl === mp3Path && !player.paused && player.currentTime > 0) {
+    return;
+  }
+
+  // 요청 고유 ID 증가 (이전 비동기 요청 무효화)
+  const thisRequestId = ++currentRequestId;
+  currentPlayingUrl = mp3Path;
+
+  // 1) 모든 재생 소스 완전 정지
   try {
     player.pause();
     player.currentTime = 0;
@@ -176,9 +186,7 @@ async function playSmartTrack(mp3Path: string, youtubeId: string, fallbackSpotId
   stopYouTubeTrack();
   stopAmbientSynth();
 
-  currentPlayingUrl = mp3Path;
-
-  // [1단계: 로컬 MP3 재생 시도]
+  // 2) [1단계: 로컬 MP3 재생 시도]
   let localPlaySuccess = false;
   try {
     player.src = mp3Path;
@@ -188,18 +196,26 @@ async function playSmartTrack(mp3Path: string, youtubeId: string, fallbackSpotId
     const playPromise = player.play();
     if (playPromise !== undefined) {
       await playPromise;
+      // 비동기 대기 도중 새로운 재생 요청이 발생했으면 이 요청은 폐기
+      if (thisRequestId !== currentRequestId) {
+        player.pause();
+        return;
+      }
       localPlaySuccess = true;
     }
-  } catch (err) {
+  } catch (err: any) {
+    // 새 요청에 의해 중단된 AbortError는 정상적인 취소이므로 폴백을 실행하지 않음
+    if (thisRequestId !== currentRequestId || err?.name === 'AbortError') {
+      return;
+    }
     localPlaySuccess = false;
   }
 
-  // [2단계: YouTube IFrame 백그라운드 스트리밍 폴백]
-  if (!localPlaySuccess) {
+  // 3) 만약 로컬 MP3 재생에 실패한 경우에만 YouTube/신디사이저 폴백 실행
+  if (!localPlaySuccess && thisRequestId === currentRequestId && !isMuted) {
     if (youtubeId) {
       playYouTubeTrack(youtubeId);
     } else {
-      // [3단계: Web Audio Synth 백업]
       playAmbientSynth(fallbackSpotId);
     }
   }
@@ -249,10 +265,13 @@ export const AudioEngine = {
   },
 
   stopAll: () => {
+    currentRequestId++; // 진행 중인 비동기 요청 취소
+    currentPlayingUrl = null;
     try {
       const player = getGlobalAudio();
       player.pause();
       player.currentTime = 0;
+      player.src = '';
     } catch (e) {}
     stopYouTubeTrack();
     stopAmbientSynth();

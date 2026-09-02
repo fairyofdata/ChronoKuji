@@ -69,8 +69,9 @@ export default function CodexModal({ isOpen, onClose, collectedItems = [], isCom
 
         {/* Items Grid */}
         <div className="p-5 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {CODEX_ITEMS.map((item) => {
+          {CODEX_ITEMS.map((item, index) => {
             const isCollected = collectedNames.has(item.name);
+            const orderNum = String(index + 1).padStart(2, '0');
             return (
               <div 
                 key={item.id}
@@ -80,6 +81,11 @@ export default function CodexModal({ isOpen, onClose, collectedItems = [], isCom
                     : 'bg-gray-950/60 border-gray-800 opacity-40 grayscale'
                 }`}
               >
+                <div className="absolute top-2 right-2">
+                  <span className="text-[9px] font-mono font-black px-1.5 py-0.5 rounded bg-black/60 border border-white/10 text-gray-300">
+                    #{orderNum}
+                  </span>
+                </div>
                 <div className="w-16 h-16 rounded-xl overflow-hidden mb-2 border border-gray-700 bg-gray-900 flex items-center justify-center">
                   {isCollected ? (
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" />

@@ -22,7 +22,7 @@ function AppContent() {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
   const [userState, setUserState] = useState<UserState | null>(null);
-  const [selectedSpot, setSelectedSpot] = useState<number>(1);
+  const [selectedSpot, setSelectedSpot] = useState<number>(SPOTS[0]?.id || 2);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [tokenTimeLeft, setTokenTimeLeft] = useState<number>(0);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
@@ -319,9 +319,10 @@ function AppContent() {
         await fetchUserState(userId);
         AudioEngine.playTravelMusic();
 
+        const targetSpotObj = SPOTS.find(s => s.id === targetId);
         const destName = targetId === 0 
           ? "차원의 균열 (성소)" 
-          : (SPOTS.find(s => s.id === targetId)?.name || "목적지");
+          : (targetSpotObj ? `${targetSpotObj.locationName} (${targetSpotObj.worldName})` : "목적지");
 
         showToast({
           type: 'info',
@@ -354,6 +355,8 @@ function AppContent() {
       });
       if (res.ok) {
         const data = await res.json();
+        setOmikujiResult(null);
+        setLlmResult(null);
         await fetchUserState(userId);
         if (data.current_spot_id) {
           AudioEngine.playSpotMusic(data.current_spot_id);
@@ -361,7 +364,7 @@ function AppContent() {
           showToast({
             type: 'success',
             title: '🎉 차원 진입 성공',
-            message: `[${spot?.worldName}] ${spot?.locationName}에 무사히 도착했습니다!`
+            message: `[${spot?.locationName}] (${spot?.worldName})에 무사히 도착했습니다!`
           });
         } else {
           AudioEngine.playLobbyMusic();
@@ -378,6 +381,54 @@ function AppContent() {
           title: '도착 처리 실패',
           message: err.detail || "도착 처리에 실패했습니다."
         });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // 7-1. Admin Instant Teleport Handler (0s Bypass)
+  const handleAdminTeleport = async (spotId: number) => {
+    if (!userId) return;
+    try {
+      hasUnlockedAudio.current = true;
+      // 1. Start movement
+      await fetch(`${API_BASE_URL}/api/v1/movement/start?target_spot_id=${spotId}`, {
+        method: 'POST',
+        headers: { 'x-user-id': userId }
+      });
+
+      // 2. Immediately arrive with admin bypass header
+      const res = await fetch(`${API_BASE_URL}/api/v1/movement/arrive`, {
+        method: 'POST',
+        headers: {
+          'x-user-id': userId,
+          'x-admin-bypass': '486'
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setOmikujiResult(null);
+        setLlmResult(null);
+        await fetchUserState(userId);
+
+        if (data.current_spot_id) {
+          AudioEngine.playSpotMusic(data.current_spot_id);
+          const spot = SPOTS.find(s => s.id === data.current_spot_id);
+          showToast({
+            type: 'success',
+            title: '⚡ 관리자 텔레포트 성공',
+            message: `[${spot?.locationName}] (${spot?.worldName})로 대기 없이 즉시 도약했습니다!`
+          });
+        } else {
+          AudioEngine.playLobbyMusic();
+          showToast({
+            type: 'shrine',
+            title: '⛩️ 성소 즉시 귀환',
+            message: '차원의 균열 성소로 즉시 귀환했습니다.'
+          });
+        }
       }
     } catch (e) {
       console.error(e);
@@ -504,14 +555,15 @@ function AppContent() {
         onGoogleLogout={handleGoogleLogout}
         isLoggingIn={isLoggingIn}
         onReturnToRift={() => handleMoveStart(0)}
+        onAdminTeleport={handleAdminTeleport}
       />
 
       {/* 3. Main Dynamic Content View (Zen Mode hiding support) */}
       {!isZenMode && (
-        <main className="relative z-10 flex-1 flex flex-col items-center justify-start p-4 sm:p-6 max-w-xl mx-auto w-full space-y-4 pb-24">
+        <main className="relative z-10 flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 max-w-xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto w-full space-y-6 pb-24">
           {/* A. Traveling Warp State */}
           {userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && (
-            <div className="w-full">
+            <div className="w-full max-w-2xl mx-auto">
               <MovementTimer 
                 userState={userState}
                 timeLeft={timeLeft}
@@ -523,24 +575,24 @@ function AppContent() {
 
           {/* B. Spot Arrived State & Omikuji Box Gacha */}
           {userState?.current_spot_id && (!userState?.target_spot_id || userState?.is_arrived) && (
-            <div className="w-full flex flex-col space-y-4 animate-fade-in">
+            <div className="w-full flex flex-col items-center space-y-4 animate-fade-in">
               {/* If fortune not yet drawn */}
               {!omikujiResult && (
-                <div className="p-6 sm:p-7 rounded-3xl backdrop-blur-2xl bg-black/55 border border-purple-500/30 shadow-2xl flex flex-col items-center text-center space-y-4">
+                <div className="w-full max-w-2xl mx-auto p-6 sm:p-8 rounded-3xl backdrop-blur-2xl bg-black/55 border border-purple-500/30 shadow-2xl flex flex-col items-center text-center space-y-4">
                   <span className="text-xs font-bold text-purple-300 tracking-wider uppercase">
                     {currentSpot?.worldName} • 神社
                   </span>
-                  <h2 className="text-xl sm:text-2xl font-black text-white drop-shadow">
+                  <h2 className="text-xl sm:text-3xl font-black text-white drop-shadow">
                     {currentSpot?.locationName}
                   </h2>
-                  <p className="text-xs text-gray-300 max-w-sm leading-relaxed">
+                  <p className="text-xs sm:text-sm text-gray-300 max-w-md leading-relaxed">
                     이곳의 시공간 에너지가 응축되어 있습니다. 운명의 산통을 흔들어 오늘의 차원 점괘를 확인하세요!
                   </p>
 
                   <button
                     onClick={handleDrawOmikuji}
                     disabled={isDrawing}
-                    className={`w-full py-4 rounded-2xl font-black text-sm tracking-wider uppercase transition shadow-2xl flex items-center justify-center space-x-2 ${
+                    className={`w-full max-w-md py-4 rounded-2xl font-black text-sm sm:text-base tracking-wider uppercase transition shadow-2xl flex items-center justify-center space-x-2 ${
                       isDrawing 
                         ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
                         : 'bg-gradient-to-r from-amber-400 via-orange-500 to-purple-600 hover:from-amber-300 hover:to-purple-500 text-white shadow-amber-500/40 hover:scale-102 active:scale-98'
@@ -554,30 +606,33 @@ function AppContent() {
 
               {/* Drawn Fortune Details */}
               {omikujiResult && (
-                <OmikujiView 
-                  result={omikujiResult}
-                  spot={currentSpot || undefined}
-                  llmResult={llmResult}
-                  isInterpreting={isInterpreting}
-                  onInterpret={handleInterpret}
-                  onShare={() => setIsShareModalOpen(true)}
-                  userTokens={userState?.llm_tokens || 0}
-                  isGuest={userState?.is_guest}
-                  onGoogleLogin={handleGoogleLogin}
-                />
+                <div className="w-full max-w-2xl mx-auto">
+                  <OmikujiView 
+                    result={omikujiResult}
+                    spot={currentSpot || undefined}
+                    llmResult={llmResult}
+                    isInterpreting={isInterpreting}
+                    onInterpret={handleInterpret}
+                    onShare={() => setIsShareModalOpen(true)}
+                    userTokens={userState?.llm_tokens || 0}
+                    isGuest={userState?.is_guest}
+                    onGoogleLogin={handleGoogleLogin}
+                  />
+                </div>
               )}
             </div>
           )}
 
-          {/* C. Dimensional Rift (Lobby) & World Selector */}
+          {/* C. Dimensional Portal Matrix (Selector) - Shown when at Rift or when exploring */}
           {(!userState?.current_spot_id && (!userState?.target_spot_id || userState?.is_arrived)) && (
             <div className="w-full flex flex-col space-y-4 animate-fade-in">
               <MapSelector 
                 selectedSpot={selectedSpot}
                 setSelectedSpot={setSelectedSpot}
-                onStartMove={() => handleMoveStart()}
+                onStartMove={(customSpotId) => handleMoveStart(customSpotId)}
                 userState={userState}
                 isCodexComplete={isCodexComplete}
+                isAdmin={isAdmin}
               />
             </div>
           )}
@@ -585,18 +640,30 @@ function AppContent() {
           {/* D. Bottom World Warp Navigation (Available when at a spot) */}
           {userState?.current_spot_id && (!userState?.target_spot_id || userState?.is_arrived) && (
             <div className="w-full mt-4">
-              <div className="p-4 rounded-3xl backdrop-blur-xl bg-black/40 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="text-left">
-                  <span className="text-[10px] text-gray-400 font-bold block">다른 세계관으로 이동</span>
-                  <span className="text-xs text-gray-200 font-bold">성소로 귀환하거나 새로운 차원으로 도약하세요</span>
-                </div>
-                <div className="flex gap-2 w-full sm:w-auto">
+              <div className="p-5 sm:p-6 rounded-3xl backdrop-blur-xl bg-black/45 border border-white/10 flex flex-col items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-3">
+                  <div className="text-left">
+                    <span className="text-[11px] text-gray-400 font-bold block">멀티버스 시공간 워프</span>
+                    <span className="text-xs sm:text-sm text-gray-200 font-bold">성소로 귀환하거나 새로운 차원으로 도약하세요</span>
+                  </div>
                   <button
                     onClick={() => handleMoveStart(0)}
-                    className="flex-1 sm:flex-none text-xs font-bold px-3.5 py-2 rounded-xl bg-purple-900/60 hover:bg-purple-800 border border-purple-500/50 text-purple-200 transition shadow"
+                    className="text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl bg-purple-900/60 hover:bg-purple-800 border border-purple-500/50 text-purple-200 transition shadow whitespace-nowrap active:scale-95"
                   >
-                    ⛩️ 차원의 균열로 귀환 (60초)
+                    ⛩️ 성소로 귀환 (60초)
                   </button>
+                </div>
+
+                {/* Collapsible/Direct Portal Matrix when in a spot */}
+                <div className="w-full pt-4 border-t border-white/10">
+                  <MapSelector 
+                    selectedSpot={selectedSpot}
+                    setSelectedSpot={setSelectedSpot}
+                    onStartMove={(customSpotId) => handleMoveStart(customSpotId)}
+                    userState={userState}
+                    isCodexComplete={isCodexComplete}
+                    isAdmin={isAdmin}
+                  />
                 </div>
               </div>
             </div>

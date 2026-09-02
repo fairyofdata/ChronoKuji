@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SPOTS } from './constants';
 import { OmikujiResult, LlmInterpretationResult, Spot } from './types';
 import { useToast } from './Toast';
+import { WORLD_OMIKUJI_LORE } from './omikujiLore';
 
 interface OmikujiViewProps {
   result: OmikujiResult;
@@ -35,6 +36,13 @@ export default function OmikujiView({
   const activeSpot = spot || SPOTS.find(s => s.id === result.spot_id);
   const isGreatLuck = result.luck_level === "大吉";
   const isBadLuck = result.luck_level === "凶" || result.luck_level === "大凶";
+
+  // 12대 세계관 맞춤형 오미쿠지 로어 보강 (Enrichment)
+  const spotId = activeSpot?.id || result.spot_id;
+  const customLore = WORLD_OMIKUJI_LORE[spotId]?.[result.luck_level];
+  const displayPoem = customLore?.poem || result.meta_info?.poem;
+  const displayText = customLore?.text || result.original_text;
+  const displayCategories = customLore?.categories || result.meta_info?.categories;
 
   // 대길일 때 황금 컨페티 파티클 연출 트리거
   useEffect(() => {
@@ -86,7 +94,7 @@ export default function OmikujiView({
 
   // 점괘 텍스트 복사하기
   const handleCopyFortuneText = () => {
-    const text = `🥠 [ChronoKuji 차원 오미쿠지]\n차원: ${activeSpot?.worldName} (${activeSpot?.locationName})\n등급: ${result.luck_level}\n행운의 아이템: ${activeSpot?.luckyItem}\n\n"${result.meta_info?.poem || result.original_text}"\n\n지금 차원 점괘 뽑기 👉 https://chronokuji.web.app`;
+    const text = `🥠 [ChronoKuji 차원 오미쿠지]\n차원: ${activeSpot?.worldName} (${activeSpot?.locationName})\n등급: ${result.luck_level}\n행운의 아이템: ${activeSpot?.luckyItem}\n\n시구: "${displayPoem || ''}"\n총운: ${displayText || ''}\n\n지금 차원 점괘 뽑기 👉 https://chronokuji.web.app`;
     navigator.clipboard.writeText(text).then(() => {
       showToast({
         type: 'success',
@@ -175,51 +183,66 @@ export default function OmikujiView({
         </div>
 
         {/* Poetic Verse (운세 시) */}
-        {result.meta_info?.poem && (
-          <div className="my-4 p-3.5 bg-gray-900/60 rounded-2xl border border-gray-800 text-center font-serif">
-            <p className="text-xs sm:text-sm text-amber-200 font-medium italic leading-relaxed">
-              "{result.meta_info.poem}"
+        {displayPoem && (
+          <div className="my-3.5 p-4 bg-gradient-to-r from-gray-950 via-purple-950/30 to-gray-950 rounded-2xl border border-purple-500/30 text-center font-serif shadow-inner">
+            <span className="text-[10px] text-purple-400 font-mono tracking-widest block mb-1">
+              ✦ {activeSpot?.worldName} 運勢詩 ✦
+            </span>
+            <p className="text-xs sm:text-sm text-amber-200 font-bold italic leading-relaxed">
+              "{displayPoem}"
             </p>
           </div>
         )}
 
-        {/* 5 Traditional Life Categories (세부운) */}
-        {result.meta_info?.categories && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5 my-4">
-            {result.meta_info.categories.wish && (
+        {/* World Custom Overall Fortune (세계관 맞춤 총운) */}
+        {displayText && (
+          <div className="my-3 p-3.5 bg-black/45 rounded-2xl border border-white/10 text-left">
+            <span className="text-[10px] text-amber-400 font-bold block mb-1">
+              📜 차원의 총운
+            </span>
+            <p className="text-xs sm:text-sm text-gray-200 font-medium leading-relaxed">
+              {displayText}
+            </p>
+          </div>
+        )}
+
+        {/* 6 Traditional Life Categories (세부운) */}
+        {displayCategories && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5 my-3.5">
+            {displayCategories.wish && (
               <div className="bg-black/40 border border-gray-800 p-2.5 rounded-xl">
                 <span className="text-[10px] text-purple-400 font-bold block">願事 (소원)</span>
-                <span className="text-xs text-gray-200 font-medium">{result.meta_info.categories.wish}</span>
+                <span className="text-xs text-gray-200 font-medium">{displayCategories.wish}</span>
               </div>
             )}
-            {result.meta_info.categories.love && (
+            {displayCategories.love && (
               <div className="bg-black/40 border border-gray-800 p-2.5 rounded-xl">
                 <span className="text-[10px] text-pink-400 font-bold block">戀愛 (인연)</span>
-                <span className="text-xs text-gray-200 font-medium">{result.meta_info.categories.love}</span>
+                <span className="text-xs text-gray-200 font-medium">{displayCategories.love}</span>
               </div>
             )}
-            {result.meta_info.categories.wealth && (
+            {displayCategories.wealth && (
               <div className="bg-black/40 border border-gray-800 p-2.5 rounded-xl">
                 <span className="text-[10px] text-yellow-400 font-bold block">金運 (재물)</span>
-                <span className="text-xs text-gray-200 font-medium">{result.meta_info.categories.wealth}</span>
+                <span className="text-xs text-gray-200 font-medium">{displayCategories.wealth}</span>
               </div>
             )}
-            {result.meta_info.categories.work && (
+            {displayCategories.work && (
               <div className="bg-black/40 border border-gray-800 p-2.5 rounded-xl">
                 <span className="text-[10px] text-blue-400 font-bold block">事業 (학업·일)</span>
-                <span className="text-xs text-gray-200 font-medium">{result.meta_info.categories.work}</span>
+                <span className="text-xs text-gray-200 font-medium">{displayCategories.work}</span>
               </div>
             )}
-            {result.meta_info.categories.travel && (
+            {displayCategories.travel && (
               <div className="bg-black/40 border border-gray-800 p-2.5 rounded-xl">
                 <span className="text-[10px] text-emerald-400 font-bold block">旅行 (이동)</span>
-                <span className="text-xs text-gray-200 font-medium">{result.meta_info.categories.travel}</span>
+                <span className="text-xs text-gray-200 font-medium">{displayCategories.travel}</span>
               </div>
             )}
-            {result.meta_info.categories.waiting && (
+            {displayCategories.waiting && (
               <div className="bg-black/40 border border-gray-800 p-2.5 rounded-xl">
                 <span className="text-[10px] text-cyan-400 font-bold block">待人 (기다림)</span>
-                <span className="text-xs text-gray-200 font-medium">{result.meta_info.categories.waiting}</span>
+                <span className="text-xs text-gray-200 font-medium">{displayCategories.waiting}</span>
               </div>
             )}
           </div>
