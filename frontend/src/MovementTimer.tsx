@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SPOTS, SYSTEM_AUDIO_TRACKS } from './constants';
 import { UserState } from './types';
+import { parseUtcDate } from './utils/date';
 
 interface MovementTimerProps {
   userState: UserState | null;
@@ -28,14 +29,20 @@ const SPACETIME_LOGS = [
 export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive }: MovementTimerProps) {
   const [logIndex, setLogIndex] = useState(0);
   const isAutoArrivingRef = useRef(false);
+  const hasCountedDownRef = useRef(false);
 
-  const isMoving = userState?.target_spot_id !== null && userState?.target_spot_id !== undefined;
+  const isMoving = userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && !userState?.is_arrived;
   const isTargetRift = userState?.target_spot_id === 0;
   const targetSpot = (userState?.target_spot_id !== null && userState?.target_spot_id !== undefined)
     ? SPOTS.find(s => s.id === userState.target_spot_id) 
     : null;
 
-  const progressPercent = Math.min(100, Math.max(0, ((60 - timeLeft) / 60) * 100));
+  // arrival_time 기반 실시간 오차 보정 시간 계산
+  const arrivalMs = userState?.arrival_time ? parseUtcDate(userState.arrival_time) : 0;
+  const computedSeconds = arrivalMs ? Math.max(0, Math.ceil((arrivalMs - Date.now()) / 1000)) : 0;
+  const currentSeconds = timeLeft > 0 ? timeLeft : computedSeconds;
+
+  const progressPercent = Math.min(100, Math.max(0, ((60 - currentSeconds) / 60) * 100));
 
   // 1. 5초마다 관측 멘트 부드럽게 순환
   useEffect(() => {
@@ -45,19 +52,23 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive }
     return () => clearInterval(interval);
   }, []);
 
-  // 2. 0초 도달 시 자동 진입 (Auto-Enter) 로직
+  // 2. 카운트다운 시작 감지
   useEffect(() => {
-    if (isMoving && timeLeft <= 0 && !isAutoArrivingRef.current) {
+    if (currentSeconds > 0) {
+      hasCountedDownRef.current = true;
+    }
+  }, [currentSeconds]);
+
+  // 3. 0초 도달 시에만 안전하게 자동 진입 (마운트 직후 0초 오작동 원천 차단)
+  useEffect(() => {
+    if (isMoving && currentSeconds <= 0 && hasCountedDownRef.current && !isAutoArrivingRef.current) {
       isAutoArrivingRef.current = true;
       const timer = setTimeout(() => {
         onArrive();
       }, 600);
       return () => clearTimeout(timer);
     }
-    if (timeLeft > 0) {
-      isAutoArrivingRef.current = false;
-    }
-  }, [timeLeft, isMoving, onArrive]);
+  }, [currentSeconds, isMoving, onArrive]);
 
   if (!isMoving) return null;
 

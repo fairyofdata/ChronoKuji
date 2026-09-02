@@ -314,9 +314,24 @@ function AppContent() {
         headers: { 'x-user-id': userId }
       });
       if (res.ok) {
+        const startData = await res.json();
         setOmikujiResult(null);
         setLlmResult(null);
-        await fetchUserState(userId);
+
+        // 실시간 워프 시간 설정 및 상태 즉각 낙관적 갱신
+        const arrivalIso = startData.arrival_time || new Date(Date.now() + 60000).toISOString();
+        const arrivalMs = parseUtcDate(arrivalIso);
+        const initialSeconds = arrivalMs ? Math.max(1, Math.ceil((arrivalMs - Date.now()) / 1000)) : 60;
+        setTimeLeft(initialSeconds);
+
+        setUserState(prev => prev ? {
+          ...prev,
+          current_spot_id: null,
+          target_spot_id: targetId,
+          arrival_time: arrivalIso,
+          is_arrived: false
+        } : null);
+
         AudioEngine.playTravelMusic();
 
         const targetSpotObj = SPOTS.find(s => s.id === targetId);
@@ -357,10 +372,23 @@ function AppContent() {
         const data = await res.json();
         setOmikujiResult(null);
         setLlmResult(null);
-        await fetchUserState(userId);
-        if (data.current_spot_id) {
-          AudioEngine.playSpotMusic(data.current_spot_id);
-          const spot = SPOTS.find(s => s.id === data.current_spot_id);
+        setTimeLeft(0);
+
+        const arrivedSpotId = (data.current_spot_id !== undefined && data.current_spot_id !== null)
+          ? data.current_spot_id 
+          : (userState?.target_spot_id && userState.target_spot_id > 0 ? userState.target_spot_id : null);
+
+        setUserState(prev => prev ? {
+          ...prev,
+          current_spot_id: arrivedSpotId,
+          target_spot_id: null,
+          arrival_time: null,
+          is_arrived: true
+        } : null);
+
+        if (arrivedSpotId) {
+          AudioEngine.playSpotMusic(arrivedSpotId);
+          const spot = SPOTS.find(s => s.id === arrivedSpotId);
           showToast({
             type: 'success',
             title: '🎉 차원 진입 성공',
@@ -520,12 +548,14 @@ function AppContent() {
     }
   };
 
-  // 배경 이미지 결정
+  // 배경 이미지 결정 및 이동 중 여부 판정
   const currentSpot = userState?.current_spot_id 
     ? SPOTS.find(s => s.id === userState.current_spot_id) 
     : null;
 
-  const bgImageSrc = (userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && !userState?.is_arrived && timeLeft > 0)
+  const isMoving = userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && !userState?.is_arrived;
+
+  const bgImageSrc = isMoving
     ? '/assets/worlds/traveling_time_path.jpg?v=2'
     : (currentSpot ? currentSpot.bgImage : '/assets/worlds/lobby_rift.jpg?v=2');
 
@@ -562,7 +592,7 @@ function AppContent() {
       {!isZenMode && (
         <main className="relative z-10 flex-1 flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 max-w-xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto w-full space-y-6 pb-24">
           {/* A. Traveling Warp State */}
-          {userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && (
+          {isMoving && (
             <div className="w-full max-w-2xl mx-auto">
               <MovementTimer 
                 userState={userState}
@@ -574,7 +604,7 @@ function AppContent() {
           )}
 
           {/* B. Spot Arrived State & Omikuji Box Gacha */}
-          {userState?.current_spot_id && (!userState?.target_spot_id || userState?.is_arrived) && (
+          {!isMoving && userState?.current_spot_id && (
             <div className="w-full flex flex-col items-center space-y-4 animate-fade-in">
               {/* If fortune not yet drawn */}
               {!omikujiResult && (
@@ -624,7 +654,7 @@ function AppContent() {
           )}
 
           {/* C. Dimensional Portal Matrix (Selector) - Shown when at Rift or when exploring */}
-          {(!userState?.current_spot_id && (!userState?.target_spot_id || userState?.is_arrived)) && (
+          {!isMoving && !userState?.current_spot_id && (
             <div className="w-full flex flex-col space-y-4 animate-fade-in">
               <MapSelector 
                 selectedSpot={selectedSpot}
@@ -638,7 +668,7 @@ function AppContent() {
           )}
 
           {/* D. Bottom World Warp Navigation (Available when at a spot) */}
-          {userState?.current_spot_id && (!userState?.target_spot_id || userState?.is_arrived) && (
+          {!isMoving && userState?.current_spot_id && (
             <div className="w-full mt-4">
               <div className="p-5 sm:p-6 rounded-3xl backdrop-blur-xl bg-black/45 border border-white/10 flex flex-col items-center gap-4">
                 <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-3">
