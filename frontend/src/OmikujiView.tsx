@@ -3,6 +3,7 @@ import { SPOTS } from './constants';
 import { OmikujiResult, LlmInterpretationResult, Spot } from './types';
 import { useToast } from './Toast';
 import { WORLD_OMIKUJI_LORE } from './omikujiLore';
+import { generateAmuletCardImage } from './utils/AmuletCardGenerator';
 
 interface OmikujiViewProps {
   result: OmikujiResult;
@@ -31,6 +32,8 @@ export default function OmikujiView({
   const [isTied, setIsTied] = useState(false);
   const [isTieAnimating, setIsTieAnimating] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isGeneratingCard, setIsGeneratingCard] = useState(false);
+  const [showSamplePreview, setShowSamplePreview] = useState(false);
   const { showToast } = useToast();
 
   const activeSpot = spot || SPOTS.find(s => s.id === result.spot_id);
@@ -102,6 +105,73 @@ export default function OmikujiView({
         message: '점괘 내용이 클립보드에 복사되었습니다.'
       });
     });
+  };
+
+  // 차원 부적 포토카드 PNG 생성 및 다운로드/공유
+  const handleDownloadAmuletCard = async () => {
+    if (!activeSpot || isGeneratingCard) return;
+    setIsGeneratingCard(true);
+
+    try {
+      showToast({
+        type: 'info',
+        title: '🎨 차원 부적 렌더링 중',
+        message: '고화질 9:16 포토카드 이미지를 생성하고 있습니다...'
+      });
+
+      const blob = await generateAmuletCardImage({
+        spot: activeSpot,
+        luckLevel: result.luck_level,
+        poem: displayPoem || "차원의 바람이 운명을 인도하리라.",
+        overallText: displayText || "길한 기운이 함께합니다."
+      });
+
+      const file = new File([blob], `ChronoKuji_${activeSpot.name}_${result.luck_level}.png`, { type: 'image/png' });
+
+      // 모바일 Web Share API 파일 공유 지원 검사
+      if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: `ChronoKuji - ${activeSpot.worldName} ${result.luck_level} 차원 부적`,
+            text: `[ChronoKuji] ${activeSpot.locationName}에서 ${result.luck_level} 점괘를 뽑았습니다!`
+          });
+          showToast({
+            type: 'success',
+            title: '📸 부적 공유 완료',
+            message: '차원 부적 카드가 공유되었습니다.'
+          });
+          return;
+        } catch {
+          // 취소 시 브라우저 다운로드로 진행
+        }
+      }
+
+      // 브라우저 직접 다운로드
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ChronoKuji_Amulet_${activeSpot.name}_${result.luck_level}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast({
+        type: 'success',
+        title: '📸 부적 저장 완료',
+        message: '고화질 차원 부적 카드(PNG)가 다운로드되었습니다.'
+      });
+    } catch (e) {
+      console.error(e);
+      showToast({
+        type: 'error',
+        title: '카드 생성 실패',
+        message: '이미지 생성 중 오류가 발생했습니다.'
+      });
+    } finally {
+      setIsGeneratingCard(false);
+    }
   };
 
   return (
@@ -262,11 +332,20 @@ export default function OmikujiView({
           )}
         </div>
 
-        {/* Actions: Copy & Bad Luck Tie Button */}
+        {/* Actions: Amulet Card Download, Copy & Bad Luck Tie Button */}
         <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-gray-800/80">
           <button
+            onClick={handleDownloadAmuletCard}
+            disabled={isGeneratingCard}
+            className="text-xs font-black px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 hover:from-amber-500 hover:to-yellow-400 text-gray-950 shadow-lg shadow-amber-500/20 transition flex items-center space-x-1.5 active:scale-95 disabled:opacity-50"
+          >
+            <span>📸</span>
+            <span>{isGeneratingCard ? "부적 생성 중..." : "차원 부적 카드 저장 (PNG)"}</span>
+          </button>
+
+          <button
             onClick={handleCopyFortuneText}
-            className="text-xs font-bold px-3 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-600/50 transition flex items-center space-x-1.5 shadow"
+            className="text-xs font-bold px-3 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-600/50 transition flex items-center space-x-1.5 shadow active:scale-95"
           >
             <span>📋</span>
             <span>점괘 텍스트 복사</span>
@@ -291,25 +370,56 @@ export default function OmikujiView({
 
       {/* 2. AI Deep Interpretation Section */}
       <div className="p-5 sm:p-6 rounded-3xl backdrop-blur-2xl bg-black/60 border border-purple-500/30 shadow-2xl relative overflow-hidden">
-        <div className="flex items-center justify-between mb-3 border-b border-gray-800 pb-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 border-b border-gray-800 pb-2.5 gap-2">
           <div className="flex items-center space-x-2">
             <span className="text-lg">🔮</span>
             <h4 className="text-sm font-extrabold text-white">
               {activeSpot?.worldName} AI 심층 차원 해석
             </h4>
           </div>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-950/80 border border-purple-500/50 text-purple-300">
-            {isGuest ? "게스트 🔒" : `남은 토큰: ${userTokens}개`}
-          </span>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowSamplePreview(prev => !prev)}
+              className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-indigo-950/80 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-900/80 transition shadow"
+            >
+              💡 다른 여행자 풀이 예시 {showSamplePreview ? "닫기" : "보기"}
+            </button>
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-purple-950/80 border border-purple-500/50 text-purple-300">
+              {isGuest 
+                ? (userTokens > 0 ? "🎁 첫 방문 무료권 보유" : "게스트 (토큰 소진)") 
+                : `남은 토큰: ${userTokens}개`}
+            </span>
+          </div>
         </div>
 
+        {/* Sample Preview Accordion Box */}
+        {showSamplePreview && (
+          <div className="mb-4 p-3.5 bg-indigo-950/40 border border-indigo-500/40 rounded-2xl text-xs space-y-2 animate-fade-in text-left">
+            <div className="flex items-center justify-between text-indigo-300 font-bold text-[11px]">
+              <span>[실제 질문 예시]: "새로운 분야로 이직을 준비 중인데 과연 잘 해낼 수 있을까요?"</span>
+            </div>
+            <div className="p-2.5 bg-black/50 rounded-xl border border-white/5 space-y-1">
+              <span className="text-[10px] font-bold text-amber-400 block">
+                ✦ {activeSpot?.worldName} 현지 페르소나의 차원 응답
+              </span>
+              <p className="text-gray-300 text-[11px] leading-relaxed">
+                "이 차원의 에너지 흐름을 보면, 초반의 낯설음은 마치 새로운 체육관에 첫발을 디뎠을 때의 긴장과 같습니다. 
+                당신이 뽑은 운명 등급 [{result.luck_level}]과 행운의 아이템 [{activeSpot?.luckyItem}]이 증명하듯, 
+                망설임을 거두고 특수 기술을 과감히 연마한다면 목표하던 결실을 확실히 거머쥐게 될 것입니다."
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Interpretation Result */}
         {llmResult ? (
           <div className="space-y-3 animate-fade-in text-xs leading-relaxed text-gray-300">
-            <div className="p-3 bg-purple-950/40 border border-purple-500/40 rounded-2xl">
+            <div className="p-3.5 bg-purple-950/40 border border-purple-500/40 rounded-2xl">
               <span className="text-[10px] font-bold text-amber-400 block mb-1">
                 ✦ {llmResult.world_concept_title || "차원의 메시지"}
               </span>
-              <p className="text-gray-200 font-medium">
+              <p className="text-gray-200 font-medium leading-relaxed">
                 {llmResult.interpretation}
               </p>
             </div>
@@ -320,23 +430,15 @@ export default function OmikujiView({
               </p>
             )}
           </div>
-        ) : isGuest ? (
-          <div className="p-4 bg-gray-900/60 border border-gray-800 rounded-2xl text-center space-y-2">
-            <p className="text-xs text-gray-300">
-              구글 로그인을 하시면 <span className="text-amber-300 font-bold">20시간마다 1회 무료</span>로 세계관 AI 심층 풀이를 받으실 수 있습니다.
-            </p>
-            {onGoogleLogin && (
-              <button
-                onClick={onGoogleLogin}
-                className="text-xs font-bold px-4 py-2 rounded-xl bg-white text-black hover:bg-gray-100 transition shadow-lg inline-flex items-center space-x-1.5"
-              >
-                <span>🔑</span>
-                <span>구글 로그인하고 무료 해석 받기</span>
-              </button>
+        ) : (userTokens > 0) ? (
+          /* User has token (Guest 1st Free Pass OR Logged-in User) */
+          <div className="space-y-3 text-left">
+            {isGuest && (
+              <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/40 text-[11px] text-amber-300 flex items-center space-x-2">
+                <span>🎁</span>
+                <span><strong>신규 차원 방랑자 웰컴 혜택:</strong> 회원가입 없이도 1회 무료 AI 풀이를 이용하실 수 있습니다!</span>
+              </div>
             )}
-          </div>
-        ) : (
-          <div className="space-y-3">
             <p className="text-xs text-gray-400">
               현재 고민이나 상황을 적어주시면, 해당 세계관 페르소나가 맞춤 심층 해석을 건넵니다.
             </p>
@@ -356,13 +458,41 @@ export default function OmikujiView({
                 className={`text-xs font-bold px-4 py-2 rounded-xl transition shadow-lg flex items-center space-x-1.5 ${
                   isInterpreting || !userContext.trim()
                     ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-900/50'
+                    : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-900/50 active:scale-95'
                 }`}
               >
                 <span>✨</span>
-                <span>{isInterpreting ? "차원 지혜 해석 중..." : "AI 심층 해석 의뢰하기 (토큰 1개)"}</span>
+                <span>{isInterpreting ? "차원 지혜 해석 중..." : (isGuest ? "첫 방문 무료 AI 해석 의뢰" : "AI 심층 해석 의뢰 (토큰 1개)")}</span>
               </button>
             </div>
+          </div>
+        ) : isGuest ? (
+          /* Guest exhausted free pass -> Prompt Google Login */
+          <div className="p-4 bg-gray-900/60 border border-gray-800 rounded-2xl text-center space-y-2.5">
+            <span className="text-xl block">🎉</span>
+            <p className="text-xs text-gray-300 leading-relaxed">
+              첫 방문 무료 AI 체험을 완료하셨습니다!<br />
+              Google 계정을 1초 만에 연동하시면 <strong className="text-amber-300">20시간마다 1회 무료 충전</strong>을 계속 받으실 수 있습니다.
+            </p>
+            {onGoogleLogin && (
+              <button
+                onClick={onGoogleLogin}
+                className="text-xs font-bold px-4 py-2 rounded-xl bg-white text-black hover:bg-gray-100 transition shadow-lg inline-flex items-center space-x-1.5 active:scale-95"
+              >
+                <span>🔑</span>
+                <span>Google 계정 연동하고 매일 무료 충전 받기</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          /* Member waiting for cooldown refill */
+          <div className="p-4 bg-gray-900/60 border border-gray-800 rounded-2xl text-center space-y-1">
+            <p className="text-xs text-gray-300">
+              오늘의 무료 AI 해석 토큰을 모두 사용하셨습니다.
+            </p>
+            <p className="text-[11px] text-gray-400">
+              상단 타이머(20시간 쿨타임)가 만료되면 1개의 무료 토큰이 자동 충전됩니다.
+            </p>
           </div>
         )}
       </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SPOTS, SYSTEM_AUDIO_TRACKS } from './constants';
 import { UserState } from './types';
 import { parseUtcDate } from './utils/date';
+import WarpInteractiveCanvas from './WarpInteractiveCanvas';
 
 interface MovementTimerProps {
   userState: UserState | null;
@@ -89,17 +90,20 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive }
           </span>
         </div>
         
-        {/* Destination Visual Core */}
-        <div className="w-full h-32 sm:h-36 rounded-2xl overflow-hidden relative border border-cyan-500/30 shadow-2xl group">
+        {/* Destination Visual Core with Interactive Spacetime Canvas */}
+        <div className="w-full h-36 sm:h-44 rounded-2xl overflow-hidden relative border border-cyan-500/30 shadow-2xl group">
           <img 
             src={isTargetRift ? "/assets/worlds/lobby_rift.jpg?v=2" : (targetSpot?.bgImage || "/assets/worlds/lobby_rift.jpg?v=2")} 
             alt="목적지" 
             className="w-full h-full object-cover filter brightness-90 animate-pulse transition duration-1000" 
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent flex items-end justify-between p-3">
+          {/* Interactive Spacetime Ripple Canvas */}
+          <WarpInteractiveCanvas />
+
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent flex items-end justify-between p-3.5 z-20 pointer-events-none">
             <div className="text-left">
               <span className="text-[10px] font-extrabold text-cyan-400 uppercase tracking-widest block">
-                Target Dimension
+                Target Dimension • 탭하여 시공간 파동 발생
               </span>
               <span className="text-xs sm:text-sm font-black text-white drop-shadow-md">
                 {isTargetRift ? "차원의 균열 성소" : `${targetSpot?.locationName} (${targetSpot?.worldName})`}
@@ -124,13 +128,13 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive }
 
         {/* Countdown & Auto-Arrival Indicator */}
         <div className="flex flex-col items-center space-y-1">
-          {timeLeft > 0 ? (
+          {currentSeconds > 0 ? (
             <>
               <p className="text-4xl sm:text-5xl font-mono text-white font-black tracking-widest drop-shadow-lg">
-                {timeLeft}<span className="text-base font-normal text-cyan-400 ml-1">초</span>
+                {currentSeconds}<span className="text-base font-normal text-cyan-400 ml-1">초</span>
               </p>
               <p className="text-xs text-gray-400 font-medium">
-                시공간 궤도를 항해하고 있습니다.
+                시공간 궤도를 항해하고 있습니다. (화면을 탭해보세요 ✨)
               </p>
             </>
           ) : (
@@ -140,9 +144,37 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive }
           )}
         </div>
 
+        {/* Spacetime Lore & Hint Flip Card (15-Second Stepwise Lore) */}
+        <div className="w-full bg-gradient-to-r from-cyan-950/40 via-black/70 to-purple-950/40 border border-cyan-500/30 rounded-2xl p-4 text-left shadow-xl backdrop-blur-md">
+          <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
+            <span className="text-[10px] font-black uppercase text-cyan-300 tracking-wider flex items-center gap-1.5">
+              <span>📡</span>
+              <span>
+                {currentSeconds > 45 ? "Phase 1: 차원 좌표 록온" :
+                 currentSeconds > 30 ? "Phase 2: 행운의 아이템 공명" :
+                 currentSeconds > 15 ? "Phase 3: 현지 시공간 이스터에그" :
+                 "Phase 4: 감속 궤도 및 게이트 안착"}
+              </span>
+            </span>
+            <span className="text-[9px] font-mono text-gray-400">
+              {currentSeconds > 45 ? "1/4" : currentSeconds > 30 ? "2/4" : currentSeconds > 15 ? "3/4" : "4/4"}
+            </span>
+          </div>
+
+          <p className="text-xs sm:text-sm font-bold text-cyan-100 leading-relaxed min-h-[38px] flex items-center">
+            {currentSeconds > 45 
+              ? `🌌 [${targetSpot?.worldName || "성소"}]의 시공간 중력장에 진입 중입니다. 엔트로피 역전 현상을 주의하세요.`
+              : currentSeconds > 30
+              ? `🎁 이 차원에는 전설의 럭키 아이템 [${targetSpot?.luckyItem || "기적의 조각"}]의 파동이 강하게 감지됩니다.`
+              : currentSeconds > 15
+              ? `💡 조언: "${targetSpot?.locationName}"에 안착 후 산통을 흔들면 최상의 운명이 응답할 것입니다.`
+              : `🎯 차원 게이트 개방 완료! 이제 안전하게 ${targetSpot?.locationName || "목적지"}에 발을 디딥니다...`}
+          </p>
+        </div>
+
         {/* 5-Second Periodic Spacetime Calibration Log */}
-        <div className="w-full bg-black/60 border border-white/10 rounded-2xl p-3 text-center shadow-inner flex items-center justify-center min-h-[50px] transition-all duration-500">
-          <p className="text-xs sm:text-sm font-bold text-cyan-200 animate-fade-in tracking-wide leading-relaxed">
+        <div className="w-full bg-black/60 border border-white/10 rounded-2xl p-3 text-center shadow-inner flex items-center justify-center min-h-[46px] transition-all duration-500">
+          <p className="text-xs font-bold text-cyan-200 animate-fade-in tracking-wide leading-relaxed">
             {SPACETIME_LOGS[logIndex]}
           </p>
         </div>

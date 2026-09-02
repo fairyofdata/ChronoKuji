@@ -40,11 +40,11 @@ async def guest_login(
         except ValueError:
             pass
 
-    # 신규 게스트 유저 생성
+    # 신규 게스트 유저 생성 (웰컴 무료 AI 풀이 1회권 기본 지급)
     new_user = User(
         id=uuid.uuid4(),
         is_guest=True,
-        llm_tokens=0,
+        llm_tokens=1,
         last_token_refill_at=datetime.now(timezone.utc)
     )
     db.add(new_user)
