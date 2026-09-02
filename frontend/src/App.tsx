@@ -231,7 +231,7 @@ function AppContent() {
       setTimeLeft(diff);
 
       if (diff <= 0) {
-        if (userId) fetchUserState(userId);
+        handleArrive();
       }
     };
 
@@ -548,12 +548,12 @@ function AppContent() {
     }
   };
 
-  // 배경 이미지 결정 및 이동 중 여부 판정
+  // 배경 이미지 결정 및 이동 중 여부 판정 (current_spot_id가 확정되기 전까지는 워프 상태 유지)
   const currentSpot = userState?.current_spot_id 
     ? SPOTS.find(s => s.id === userState.current_spot_id) 
     : null;
 
-  const isMoving = userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && !userState?.is_arrived;
+  const isMoving = userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && !userState?.current_spot_id;
 
   const bgImageSrc = isMoving
     ? '/assets/worlds/traveling_time_path.jpg?v=2'

@@ -133,11 +133,13 @@ async def firebase_google_login(
 @router.get("/me")
 @router.get("/state")
 async def get_user_state(
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     유저의 현재 상태(토큰, 이동 위치 등)를 반환.
     get_current_user 의존성을 통과하며 자동으로 토큰 지연 평가(리필)가 수행됨.
+    이동 예정 시간(arrival_time)이 지났다면 서버에서 자동으로 도착 완료를 확정 갱신합니다.
     """
     is_arrived = False
     now = datetime.now(timezone.utc)
@@ -150,7 +152,16 @@ async def get_user_state(
             
         if now >= arrival_time:
             is_arrived = True
-        arrival_time_iso = arrival_time.isoformat()
+            # 서버 사이드 자동 도착 확정 (Auto-Resolve Arrival)
+            arrived_spot_id = current_user.target_spot_id if current_user.target_spot_id > 0 else None
+            current_user.current_spot_id = arrived_spot_id
+            current_user.target_spot_id = None
+            current_user.arrival_time = None
+            db.add(current_user)
+            await db.commit()
+            await db.refresh(current_user)
+        else:
+            arrival_time_iso = arrival_time.isoformat()
 
     last_token_refill_iso = None
     if current_user.last_token_refill_at:
