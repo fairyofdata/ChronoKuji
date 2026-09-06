@@ -228,15 +228,18 @@ function AppContent() {
   };
 
   // 3. Spacetime Warp Timer (60s Countdown)
+  const hasWarpTickedRef = useRef<boolean>(false);
   useEffect(() => {
     if (!userState?.arrival_time || userState?.is_arrived) {
       setTimeLeft(0);
+      hasWarpTickedRef.current = false;
       return;
     }
 
     const arrivalMs = parseUtcDate(userState.arrival_time);
     if (!arrivalMs) {
       setTimeLeft(0);
+      hasWarpTickedRef.current = false;
       return;
     }
 
@@ -245,7 +248,11 @@ function AppContent() {
       const diff = Math.max(0, Math.ceil((arrivalMs - nowMs) / 1000));
       setTimeLeft(diff);
 
-      if (diff <= 0) {
+      if (diff > 0) {
+        hasWarpTickedRef.current = true;
+      } else if (diff <= 0 && hasWarpTickedRef.current) {
+        // 실제로 카운트다운이 진행되어 0초에 도달했을 때만 도착 요청
+        hasWarpTickedRef.current = false;
         handleArrive();
       }
     };
@@ -342,13 +349,31 @@ function AppContent() {
         const initialSeconds = arrivalMs ? Math.max(1, Math.ceil((arrivalMs - Date.now()) / 1000)) : 60;
         setTimeLeft(initialSeconds);
 
-        setUserState(prev => prev ? {
-          ...prev,
-          current_spot_id: null,
-          target_spot_id: targetId,
-          arrival_time: arrivalIso,
-          is_arrived: false
-        } : null);
+        setUserState(prev => {
+          if (prev) {
+            return {
+              ...prev,
+              current_spot_id: null,
+              target_spot_id: targetId,
+              arrival_time: arrivalIso,
+              is_arrived: false
+            };
+          }
+          return {
+            user_id: userId,
+            firebase_uid: null,
+            email: null,
+            display_name: null,
+            photo_url: null,
+            is_guest: true,
+            llm_tokens: 1,
+            last_token_refill_at: null,
+            current_spot_id: null,
+            target_spot_id: targetId,
+            is_arrived: false,
+            arrival_time: arrivalIso
+          };
+        });
 
         AudioEngine.playTravelMusic();
 

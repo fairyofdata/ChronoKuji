@@ -32,7 +32,7 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive }
   const isAutoArrivingRef = useRef(false);
   const hasCountedDownRef = useRef(false);
 
-  const isMoving = userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && !userState?.is_arrived;
+  const isMoving = userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && !userState?.current_spot_id;
   const isTargetRift = userState?.target_spot_id === 0;
   const targetSpot = (userState?.target_spot_id !== null && userState?.target_spot_id !== undefined)
     ? SPOTS.find(s => s.id === userState.target_spot_id) 
@@ -53,23 +53,12 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive }
     return () => clearInterval(interval);
   }, []);
 
-  // 2. 카운트다운 시작 감지
+  // 카운트다운 시작 감지
   useEffect(() => {
     if (currentSeconds > 0) {
       hasCountedDownRef.current = true;
     }
   }, [currentSeconds]);
-
-  // 3. 0초 도달 시에만 안전하게 자동 진입 (마운트 직후 0초 오작동 원천 차단)
-  useEffect(() => {
-    if (isMoving && currentSeconds <= 0 && hasCountedDownRef.current && !isAutoArrivingRef.current) {
-      isAutoArrivingRef.current = true;
-      const timer = setTimeout(() => {
-        onArrive();
-      }, 600);
-      return () => clearTimeout(timer);
-    }
-  }, [currentSeconds, isMoving, onArrive]);
 
   if (!isMoving) return null;
 
