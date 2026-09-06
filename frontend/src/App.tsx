@@ -123,18 +123,19 @@ function AppContent() {
 
       try {
         if (fUser) {
-          // Google Authenticated User Login
-          const idToken = await fUser.getIdToken();
-          const res = await fetch(`${API_BASE_URL}/api/v1/users/auth`, {
+          // Google Authenticated User Login (게스트 기록 연동 지원)
+          const currentGuestId = localStorage.getItem('omikuz_user_id');
+          const res = await fetch(`${API_BASE_URL}/api/v1/users/firebase-auth`, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${idToken}`
+              'Content-Type': 'application/json'
             },
             body: JSON.stringify({
               firebase_uid: fUser.uid,
               email: fUser.email,
-              display_name: fUser.displayName
+              display_name: fUser.displayName,
+              photo_url: fUser.photoURL,
+              guest_uuid: currentGuestId || undefined
             })
           });
 
@@ -202,6 +203,20 @@ function AppContent() {
       await logoutFirebase();
       setOmikujiResult(null);
       setLlmResult(null);
+      localStorage.removeItem('omikuz_user_id');
+
+      // 신규 게스트 세션 생성
+      const res = await fetch(`${API_BASE_URL}/api/v1/users/auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserId(data.user_id);
+        localStorage.setItem('omikuz_user_id', data.user_id);
+        fetchUserState(data.user_id);
+      }
+
       showToast({
         type: 'info',
         title: '로그아웃 완료',
@@ -361,8 +376,10 @@ function AppContent() {
   };
 
   // 7. Warp Arrival Handler
+  const isArrivingRef = useRef<boolean>(false);
   const handleArrive = async () => {
-    if (!userId) return;
+    if (!userId || isArrivingRef.current) return;
+    isArrivingRef.current = true;
     try {
       const headers: Record<string, string> = { 'x-user-id': userId };
       if (isAdmin) headers['x-admin-bypass'] = '486';
@@ -407,14 +424,19 @@ function AppContent() {
         }
       } else {
         const err = await res.json();
-        showToast({
-          type: 'error',
-          title: '도착 처리 실패',
-          message: err.detail || "도착 처리에 실패했습니다."
-        });
+        // 이미 도착 처리가 되었거나 이동 중이 아닌 경우는 무시
+        if (err.detail !== "Not currently moving.") {
+          showToast({
+            type: 'error',
+            title: '도착 처리 실패',
+            message: err.detail || "도착 처리에 실패했습니다."
+          });
+        }
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      isArrivingRef.current = false;
     }
   };
 
