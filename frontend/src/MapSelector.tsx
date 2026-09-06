@@ -257,13 +257,24 @@ export default function MapSelector({
               }}
             >
               {SPOTS.map((spot, index) => {
-                const offset = index - activeSpotIndex;
+                const total = SPOTS.length;
+                // 무한 순환 링(Circular Loop) 오프셋 계산:
+                // 11번(마지막)에서 오른쪽으로 넘기면 0번(첫번째)이 바로 오른쪽에 위치하고,
+                // 0번(첫번째)에서 왼쪽으로 넘기면 11번(마지막)이 바로 왼쪽에 위치하도록 모듈러 처리
+                let rawOffset = index - activeSpotIndex;
+                if (rawOffset > total / 2) {
+                  rawOffset -= total;
+                } else if (rawOffset < -total / 2) {
+                  rawOffset += total;
+                }
+                const offset = rawOffset;
+
                 const isCenter = offset === 0;
                 const isCurrent = userState?.current_spot_id === spot.id;
                 const isLocked = spot.isHidden && !isCodexComplete && !isAdmin;
                 const orderNum = String(index + 1).padStart(2, '0');
 
-                // 오프셋이 너무 멀면 렌더링 부하 절감을 위해 투명화
+                // 오프셋이 너무 멀면 화면 밖이므로 렌더링 부하 절감을 위해 필터링 (순환 덱에선 앞뒤 3개씩 표시)
                 if (Math.abs(offset) > 3) {
                   return null;
                 }
