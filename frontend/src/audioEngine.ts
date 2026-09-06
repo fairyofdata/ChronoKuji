@@ -289,5 +289,150 @@ export const AudioEngine = {
     return isMuted;
   },
 
-  isMuted: () => isMuted
+  isMuted: () => isMuted,
+
+  /**
+   * 차원장 스와이프 효과음 ("피우웅~")
+   * 공중에 떠 있는 마법사 카드를 넘길 때 차원 에너지가 공명하듯 피치 벤드 & 밴드패스 필터가 통과하는 소리
+   */
+  playDimensionalSwipeSound: (direction: 'left' | 'right' | 'select' = 'right') => {
+    if (isMuted) return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+
+      // 1. 공명 신스 오실레이터 (사인파 + 삼각파 혼합 느낌의 피치 드롭/상승)
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+
+      osc.type = 'sine';
+      const startFreq = direction === 'left' ? 720 : 640;
+      const endFreq = direction === 'left' ? 220 : 190;
+
+      osc.frequency.setValueAtTime(startFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.18);
+
+      // 필터 스윕: 공중에 떠서 궤적을 가르는 차원장의 느낌 강화
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(800, now);
+      filter.frequency.exponentialRampToValueAtTime(320, now + 0.18);
+      filter.Q.setValueAtTime(4.0, now);
+
+      // 볼륨 엔벨로프: 부드럽게 시작했다가 꼬리가 빠져나가는 소리
+      gain.gain.setValueAtTime(0.01, now);
+      gain.gain.linearRampToValueAtTime(0.28, now + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      // 2. 공기 차원 바람 서브 노이즈 ("슈웅" 쉬머링)
+      const noiseBuffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.15), ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < noiseBuffer.length; i++) {
+        output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.05));
+      }
+      const noiseSource = ctx.createBufferSource();
+      noiseSource.buffer = noiseBuffer;
+
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.setValueAtTime(1400, now);
+      noiseFilter.frequency.exponentialRampToValueAtTime(400, now + 0.15);
+      noiseFilter.Q.setValueAtTime(2.5, now);
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.08, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+      noiseSource.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.23);
+      noiseSource.start(now);
+      noiseSource.stop(now + 0.16);
+    } catch (e) {
+      // AudioContext unallowed or muted
+    }
+  },
+
+  /**
+   * 차원의 균열 파열/돌파 효과음 ("슈콰앙!")
+   * 차원 게이트를 선택하고 도약할 때 시공간 균열을 깨부수고 빨려 들어가는 임팩트 사운드
+   */
+  playDimensionalRiftSound: () => {
+    if (isMuted) return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+
+      // 1. 슈콰- 파열 크래시 노이즈 버스트
+      const noiseLen = Math.floor(ctx.sampleRate * 0.65);
+      const noiseBuffer = ctx.createBuffer(1, noiseLen, ctx.sampleRate);
+      const noiseData = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < noiseLen; i++) {
+        noiseData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / noiseLen, 1.8);
+      }
+      const noiseSrc = ctx.createBufferSource();
+      noiseSrc.buffer = noiseBuffer;
+
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.setValueAtTime(3600, now);
+      noiseFilter.frequency.exponentialRampToValueAtTime(300, now + 0.55);
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.45, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+      noiseSrc.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+
+      // 2. 앙- 서브 베이스 붐 (차원 균열 강타 진동)
+      const subOsc = ctx.createOscillator();
+      const subGain = ctx.createGain();
+
+      subOsc.type = 'sine';
+      subOsc.frequency.setValueAtTime(140, now);
+      subOsc.frequency.exponentialRampToValueAtTime(32, now + 0.65);
+
+      subGain.gain.setValueAtTime(0.55, now);
+      subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+
+      subOsc.connect(subGain);
+      subGain.connect(ctx.destination);
+
+      // 3. 차원 유리 깨짐 고주파 아티팩트
+      const glassOsc = ctx.createOscillator();
+      const glassGain = ctx.createGain();
+      glassOsc.type = 'triangle';
+      glassOsc.frequency.setValueAtTime(1200, now);
+      glassOsc.frequency.exponentialRampToValueAtTime(240, now + 0.25);
+
+      glassGain.gain.setValueAtTime(0.2, now);
+      glassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+      glassOsc.connect(glassGain);
+      glassGain.connect(ctx.destination);
+
+      noiseSrc.start(now);
+      noiseSrc.stop(now + 0.65);
+      subOsc.start(now);
+      subOsc.stop(now + 0.72);
+      glassOsc.start(now);
+      glassOsc.stop(now + 0.26);
+    } catch (e) {
+      // AudioContext unallowed or muted
+    }
+  }
 };
+

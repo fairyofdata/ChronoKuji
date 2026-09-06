@@ -309,6 +309,9 @@ function AppContent() {
     hasUnlockedAudio.current = true;
 
     try {
+      // 차원의 균열을 깨부수고 들어가는 '슈콰앙!' 사운드 즉각 재생
+      AudioEngine.playDimensionalRiftSound();
+
       const res = await fetch(`${API_BASE_URL}/api/v1/movement/start?target_spot_id=${targetId}`, {
         method: 'POST',
         headers: { 'x-user-id': userId }

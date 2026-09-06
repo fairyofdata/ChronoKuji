@@ -44,3 +44,35 @@
   animation: scaleUp 0.35s ease-out forwards;
 }
 
+@keyframes floatCard {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-9px) rotate(0.4deg);
+  }
+}
+
+@keyframes holographicShine {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-float-card {
+  animation: floatCard 4.2s ease-in-out infinite;
+}
+
+.holo-card-glow {
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(138,43,226,0.15) 25%, rgba(0,255,255,0.15) 50%, rgba(255,215,0,0.15) 75%, rgba(255,255,255,0.15) 100%);
+  background-size: 200% 200%;
+  animation: holographicShine 6s ease infinite;
+}
+
+
