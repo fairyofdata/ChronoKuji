@@ -3,6 +3,7 @@ import { SPOTS } from './constants';
 import { AudioEngine } from './audioEngine';
 import { FateHistoryItem } from './types';
 import { API_BASE_URL } from './config';
+import { LocalGameService } from './services/localGameService';
 
 interface HistoryModalProps {
   isOpen: boolean;
@@ -34,21 +35,27 @@ export default function HistoryModal({ isOpen, onClose, userId, currentSpotId }:
   }, [isOpen, userId, currentSpotId]);
 
   const fetchHistory = async () => {
-    if (!userId) return;
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/omikuji/history`, {
-        headers: { 'x-user-id': userId }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setHistories(data.histories || []);
+      if (API_BASE_URL && userId) {
+        const res = await fetch(`${API_BASE_URL}/api/v1/omikuji/history`, {
+          headers: { 'x-user-id': userId }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setHistories(data.histories || []);
+          return;
+        }
       }
     } catch (e) {
-      console.error(e);
+      console.warn("Backend history fetch failed, using local history:", e);
     } finally {
       setIsLoading(false);
     }
+
+    // Local Standalone Fallback
+    const localHistories = LocalGameService.getHistory();
+    setHistories(localHistories);
   };
 
   if (!isOpen) return null;

@@ -14,6 +14,7 @@ import { auth, loginWithGoogle, logoutFirebase, onAuthStateChanged, FirebaseUser
 import { UserState, OmikujiResult, LlmInterpretationResult, CollectedCodexItem } from './types';
 import { parseUtcDate } from './utils/date';
 import { API_BASE_URL } from './config';
+import { LocalGameService } from './services/localGameService';
 import { ToastProvider, useToast } from './Toast';
 import './App.css';
 
@@ -74,45 +75,42 @@ function AppContent() {
   // 2. Fetch User State Helper
   const fetchUserState = async (uid: string) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/users/state`, {
-        headers: { 'x-user-id': uid }
-      });
-      if (res.ok) {
-        const state: UserState = await res.json();
-        setUserState(state);
-
-        // BGM synchronization
-        if (hasUnlockedAudio.current) {
-          if (state.target_spot_id !== null && state.target_spot_id !== undefined && !state.is_arrived) {
-            AudioEngine.playTravelMusic();
-          } else if (state.current_spot_id) {
-            AudioEngine.playSpotMusic(state.current_spot_id);
-          } else {
-            AudioEngine.playLobbyMusic();
-          }
-        }
-      } else if (res.status === 404) {
-        // Stale guest UUID in browser storage -> auto-recover new session
-        localStorage.removeItem('omikuz_user_id');
-        const authRes = await fetch(`${API_BASE_URL}/api/v1/users/auth`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+      if (API_BASE_URL) {
+        const res = await fetch(`${API_BASE_URL}/api/v1/users/state`, {
+          headers: { 'x-user-id': uid }
         });
-        if (authRes.ok) {
-          const authData = await authRes.json();
-          setUserId(authData.user_id);
-          localStorage.setItem('omikuz_user_id', authData.user_id);
-          const recoverRes = await fetch(`${API_BASE_URL}/api/v1/users/state`, {
-            headers: { 'x-user-id': authData.user_id }
-          });
-          if (recoverRes.ok) {
-            const recoveredState = await recoverRes.json();
-            setUserState(recoveredState);
+        if (res.ok) {
+          const state: UserState = await res.json();
+          setUserState(state);
+
+          // BGM synchronization
+          if (hasUnlockedAudio.current) {
+            if (state.target_spot_id !== null && state.target_spot_id !== undefined && !state.is_arrived) {
+              AudioEngine.playTravelMusic();
+            } else if (state.current_spot_id) {
+              AudioEngine.playSpotMusic(state.current_spot_id);
+            } else {
+              AudioEngine.playLobbyMusic();
+            }
           }
+          return;
         }
       }
     } catch (e) {
-      console.error("fetchUserState Error:", e);
+      console.warn("Backend not available, using local standalone game service:", e);
+    }
+
+    // Client-First Standalone Fallback
+    const localState = LocalGameService.getUserState(uid);
+    setUserState(localState);
+    if (hasUnlockedAudio.current) {
+      if (localState.target_spot_id !== null && localState.target_spot_id !== undefined && !localState.is_arrived) {
+        AudioEngine.playTravelMusic();
+      } else if (localState.current_spot_id) {
+        AudioEngine.playSpotMusic(localState.current_spot_id);
+      } else {
+        AudioEngine.playLobbyMusic();
+      }
     }
   };
 
@@ -297,26 +295,35 @@ function AppContent() {
   // 5. Codex Items Synchronization from History
   useEffect(() => {
     if (userId) {
-      fetch(`${API_BASE_URL}/api/v1/omikuji/history`, { headers: { 'x-user-id': userId } })
-        .then(res => res.json())
-        .then(data => {
-          if (data.histories) {
-            const items: CollectedCodexItem[] = [];
-            data.histories.forEach((h: any) => {
-              const spot = SPOTS.find(s => s.id === h.spot_id);
-              if (spot && !items.some(i => i.name === spot.luckyItem)) {
-                items.push({
-                  name: spot.luckyItem,
-                  worldName: spot.worldName,
-                  image: spot.itemImage,
-                  acquiredAt: h.drawn_at
-                });
-              }
-            });
-            setCollectedItems(items);
-          }
-        })
-        .catch(console.error);
+      if (API_BASE_URL) {
+        fetch(`${API_BASE_URL}/api/v1/omikuji/history`, { headers: { 'x-user-id': userId } })
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data && data.histories) {
+              const items: CollectedCodexItem[] = [];
+              data.histories.forEach((h: any) => {
+                const spot = SPOTS.find(s => s.id === h.spot_id);
+                if (spot && !items.some(i => i.name === spot.luckyItem)) {
+                  items.push({
+                    name: spot.luckyItem,
+                    worldName: spot.worldName,
+                    image: spot.itemImage,
+                    acquiredAt: h.drawn_at
+                  });
+                }
+              });
+              setCollectedItems(items);
+              return;
+            }
+            // 폴백
+            setCollectedItems(LocalGameService.getCollectedCodex());
+          })
+          .catch(() => {
+            setCollectedItems(LocalGameService.getCollectedCodex());
+          });
+      } else {
+        setCollectedItems(LocalGameService.getCollectedCodex());
+      }
     }
   }, [userId, omikujiResult]);
 
@@ -334,67 +341,56 @@ function AppContent() {
       // 차원의 균열을 깨부수고 들어가는 '슈콰앙!' 사운드 즉각 재생
       AudioEngine.playDimensionalRiftSound();
 
-      const res = await fetch(`${API_BASE_URL}/api/v1/movement/start?target_spot_id=${targetId}`, {
-        method: 'POST',
-        headers: { 'x-user-id': userId }
-      });
-      if (res.ok) {
-        const startData = await res.json();
-        setOmikujiResult(null);
-        setLlmResult(null);
+      let startData: any = null;
+      if (API_BASE_URL) {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v1/movement/start?target_spot_id=${targetId}`, {
+            method: 'POST',
+            headers: { 'x-user-id': userId }
+          });
+          if (res.ok) startData = await res.json();
+        } catch {}
+      }
 
-        // 실시간 워프 시간 설정 및 상태 즉각 낙관적 갱신
-        const arrivalIso = startData.arrival_time || new Date(Date.now() + 60000).toISOString();
-        const arrivalMs = parseUtcDate(arrivalIso);
-        const initialSeconds = arrivalMs ? Math.max(1, Math.ceil((arrivalMs - Date.now()) / 1000)) : 60;
-        setTimeLeft(initialSeconds);
+      // Standalone Fallback
+      if (!startData) {
+        startData = LocalGameService.startMovement(targetId);
+      }
 
-        setUserState(prev => {
-          if (prev) {
-            return {
-              ...prev,
-              current_spot_id: null,
-              target_spot_id: targetId,
-              arrival_time: arrivalIso,
-              is_arrived: false
-            };
-          }
+      setOmikujiResult(null);
+      setLlmResult(null);
+
+      // 실시간 워프 시간 설정 및 상태 즉각 낙관적 갱신
+      const arrivalIso = startData.arrival_time || new Date(Date.now() + 60000).toISOString();
+      const arrivalMs = parseUtcDate(arrivalIso);
+      const initialSeconds = arrivalMs ? Math.max(1, Math.ceil((arrivalMs - Date.now()) / 1000)) : 60;
+      setTimeLeft(initialSeconds);
+
+      setUserState(prev => {
+        if (prev) {
           return {
-            user_id: userId,
-            firebase_uid: null,
-            email: null,
-            display_name: null,
-            photo_url: null,
-            is_guest: true,
-            llm_tokens: 1,
-            last_token_refill_at: null,
+            ...prev,
             current_spot_id: null,
             target_spot_id: targetId,
-            is_arrived: false,
-            arrival_time: arrivalIso
+            arrival_time: arrivalIso,
+            is_arrived: false
           };
-        });
+        }
+        return startData;
+      });
 
-        AudioEngine.playTravelMusic();
+      AudioEngine.playTravelMusic();
 
-        const targetSpotObj = SPOTS.find(s => s.id === targetId);
-        const destName = targetId === 0 
-          ? "차원의 균열 (성소)" 
-          : (targetSpotObj ? `${targetSpotObj.locationName} (${targetSpotObj.worldName})` : "목적지");
+      const targetSpotObj = SPOTS.find(s => s.id === targetId);
+      const destName = targetId === 0 
+        ? "차원의 균열 (성소)" 
+        : (targetSpotObj ? `${targetSpotObj.locationName} (${targetSpotObj.worldName})` : "목적지");
 
-        showToast({
-          type: 'info',
-          title: '⏳ 시공간 워프 개시',
-          message: `[${destName}]을(를) 향해 도약을 시작합니다. (60초 소요)`
-        });
-      } else {
-        const err = await res.json();
-        showToast({
-          type: 'error',
-          title: '워프 실패',
-          message: err.detail || "이동 시작에 실패했습니다."
-        });
-      }
+      showToast({
+        type: 'info',
+        title: '⏳ 시공간 워프 개시',
+        message: `[${destName}]을(를) 향해 도약을 시작합니다. (60초 소요)`
+      });
     } catch (e) {
       console.error(e);
     }
@@ -406,57 +402,55 @@ function AppContent() {
     if (!userId || isArrivingRef.current) return;
     isArrivingRef.current = true;
     try {
-      const headers: Record<string, string> = { 'x-user-id': userId };
-      if (isAdmin) headers['x-admin-bypass'] = '486';
-
-      const res = await fetch(`${API_BASE_URL}/api/v1/movement/arrive`, {
-        method: 'POST',
-        headers
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setOmikujiResult(null);
-        setLlmResult(null);
-        setTimeLeft(0);
-
-        const arrivedSpotId = (data.current_spot_id !== undefined && data.current_spot_id !== null)
-          ? data.current_spot_id 
-          : (userState?.target_spot_id && userState.target_spot_id > 0 ? userState.target_spot_id : null);
-
-        setUserState(prev => prev ? {
-          ...prev,
-          current_spot_id: arrivedSpotId,
-          target_spot_id: null,
-          arrival_time: null,
-          is_arrived: true
-        } : null);
-
-        if (arrivedSpotId) {
-          AudioEngine.playSpotMusic(arrivedSpotId);
-          const spot = SPOTS.find(s => s.id === arrivedSpotId);
-          showToast({
-            type: 'success',
-            title: '🎉 차원 진입 성공',
-            message: `[${spot?.locationName}] (${spot?.worldName})에 무사히 도착했습니다!`
+      let data: any = null;
+      if (API_BASE_URL) {
+        try {
+          const headers: Record<string, string> = { 'x-user-id': userId };
+          if (isAdmin) headers['x-admin-bypass'] = '486';
+          const res = await fetch(`${API_BASE_URL}/api/v1/movement/arrive`, {
+            method: 'POST',
+            headers
           });
-        } else {
-          AudioEngine.playLobbyMusic();
-          showToast({
-            type: 'shrine',
-            title: '⛩️ 성소 귀환 완료',
-            message: '차원의 균열 성소로 안전하게 귀환했습니다.'
-          });
-        }
+          if (res.ok) data = await res.json();
+        } catch {}
+      }
+
+      // Standalone Fallback
+      if (!data) {
+        data = LocalGameService.arriveMovement();
+      }
+
+      setOmikujiResult(null);
+      setLlmResult(null);
+      setTimeLeft(0);
+
+      const arrivedSpotId = (data.current_spot_id !== undefined && data.current_spot_id !== null)
+        ? data.current_spot_id 
+        : (userState?.target_spot_id && userState.target_spot_id > 0 ? userState.target_spot_id : null);
+
+      setUserState(prev => prev ? {
+        ...prev,
+        current_spot_id: arrivedSpotId,
+        target_spot_id: null,
+        arrival_time: null,
+        is_arrived: true
+      } : data);
+
+      if (arrivedSpotId) {
+        AudioEngine.playSpotMusic(arrivedSpotId);
+        const spot = SPOTS.find(s => s.id === arrivedSpotId);
+        showToast({
+          type: 'success',
+          title: '🎉 차원 진입 성공',
+          message: `[${spot?.locationName}] (${spot?.worldName})에 무사히 도착했습니다!`
+        });
       } else {
-        const err = await res.json();
-        // 이미 도착 처리가 되었거나 이동 중이 아닌 경우는 무시
-        if (err.detail !== "Not currently moving.") {
-          showToast({
-            type: 'error',
-            title: '도착 처리 실패',
-            message: err.detail || "도착 처리에 실패했습니다."
-          });
-        }
+        AudioEngine.playLobbyMusic();
+        showToast({
+          type: 'shrine',
+          title: '⛩️ 성소 귀환 완료',
+          message: '차원의 균열 성소로 안전하게 귀환했습니다.'
+        });
       }
     } catch (e) {
       console.error(e);
@@ -470,43 +464,53 @@ function AppContent() {
     if (!userId) return;
     try {
       hasUnlockedAudio.current = true;
-      // 1. Start movement
-      await fetch(`${API_BASE_URL}/api/v1/movement/start?target_spot_id=${spotId}`, {
-        method: 'POST',
-        headers: { 'x-user-id': userId }
-      });
+      let data: any = null;
 
-      // 2. Immediately arrive with admin bypass header
-      const res = await fetch(`${API_BASE_URL}/api/v1/movement/arrive`, {
-        method: 'POST',
-        headers: {
-          'x-user-id': userId,
-          'x-admin-bypass': '486'
-        }
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setOmikujiResult(null);
-        setLlmResult(null);
-        await fetchUserState(userId);
-
-        if (data.current_spot_id) {
-          AudioEngine.playSpotMusic(data.current_spot_id);
-          const spot = SPOTS.find(s => s.id === data.current_spot_id);
-          showToast({
-            type: 'success',
-            title: '⚡ 관리자 텔레포트 성공',
-            message: `[${spot?.locationName}] (${spot?.worldName})로 대기 없이 즉시 도약했습니다!`
+      if (API_BASE_URL) {
+        try {
+          // 1. Start movement
+          await fetch(`${API_BASE_URL}/api/v1/movement/start?target_spot_id=${spotId}`, {
+            method: 'POST',
+            headers: { 'x-user-id': userId }
           });
-        } else {
-          AudioEngine.playLobbyMusic();
-          showToast({
-            type: 'shrine',
-            title: '⛩️ 성소 즉시 귀환',
-            message: '차원의 균열 성소로 즉시 귀환했습니다.'
+
+          // 2. Immediately arrive with admin bypass header
+          const res = await fetch(`${API_BASE_URL}/api/v1/movement/arrive`, {
+            method: 'POST',
+            headers: {
+              'x-user-id': userId,
+              'x-admin-bypass': '486'
+            }
           });
-        }
+          if (res.ok) data = await res.json();
+        } catch {}
+      }
+
+      // Standalone Fallback
+      if (!data) {
+        LocalGameService.startMovement(spotId);
+        data = LocalGameService.arriveMovement();
+      }
+
+      setOmikujiResult(null);
+      setLlmResult(null);
+      await fetchUserState(userId);
+
+      if (data.current_spot_id) {
+        AudioEngine.playSpotMusic(data.current_spot_id);
+        const spot = SPOTS.find(s => s.id === data.current_spot_id);
+        showToast({
+          type: 'success',
+          title: '⚡ 관리자 텔레포트 성공',
+          message: `[${spot?.locationName}] (${spot?.worldName})로 대기 없이 즉시 도약했습니다!`
+        });
+      } else {
+        AudioEngine.playLobbyMusic();
+        showToast({
+          type: 'shrine',
+          title: '⛩️ 성소 즉시 귀환',
+          message: '차원의 균열 성소로 즉시 귀환했습니다.'
+        });
       }
     } catch (e) {
       console.error(e);
@@ -524,26 +528,37 @@ function AppContent() {
     setIsDrawing(true);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/omikuji/draw?spot_id=${userState.current_spot_id}`, {
-        method: 'POST',
-        headers: { 'x-user-id': userId }
-      });
-      if (res.ok) {
-        const data: OmikujiResult = await res.json();
-        setOmikujiResult(data);
-        setLlmResult(null);
-
-        // 라푼젤 대길 축제 음악 전환
-        if (userState.current_spot_id === 9 && data.luck_level === '大吉') {
-          AudioEngine.playCelebrationMusic(9);
-        }
-
-        showToast({
-          type: data.luck_level === '大吉' ? 'success' : data.luck_level === '凶' || data.luck_level === '大凶' ? 'warning' : 'info',
-          title: `🥠 점괘 [${data.luck_level}] 출현`,
-          message: `운명의 점괘가 펼쳐졌습니다.`
-        });
+      let data: OmikujiResult | null = null;
+      if (API_BASE_URL) {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v1/omikuji/draw?spot_id=${userState.current_spot_id}`, {
+            method: 'POST',
+            headers: { 'x-user-id': userId }
+          });
+          if (res.ok) data = await res.json();
+        } catch {}
       }
+
+      // Standalone Fallback
+      if (!data) {
+        data = LocalGameService.drawOmikuji(userState.current_spot_id);
+      }
+
+      setOmikujiResult(data);
+      setLlmResult(null);
+
+      // 라푼젤 대길 축제 음악 전환
+      if (userState.current_spot_id === 9 && data.luck_level === '大吉') {
+        AudioEngine.playCelebrationMusic(9);
+      }
+
+      showToast({
+        type: data.luck_level === '大吉' ? 'success' : data.luck_level === '凶' || data.luck_level === '大凶' ? 'warning' : 'info',
+        title: `🥠 점괘 [${data.luck_level}] 출현`,
+        message: `운명의 점괘가 펼쳐졌습니다.`
+      });
+      // 도감 갱신
+      setCollectedItems(LocalGameService.getCollectedCodex());
     } catch (e) {
       console.error(e);
     } finally {
@@ -555,42 +570,37 @@ function AppContent() {
   const handleInterpret = async (context: string) => {
     if (!userId || !omikujiResult) return;
     
-    // 게스트 상태인 경우 로그인 팝업 유도
-    if (userState?.is_guest) {
-      handleGoogleLogin();
-      return;
-    }
-
     setIsInterpreting(true);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/interpret/${omikujiResult.history_id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId
-        },
-        body: JSON.stringify({
-          user_context: context
-        })
-      });
-      if (res.ok) {
-        const data: LlmInterpretationResult = await res.json();
-        setLlmResult(data);
-        fetchUserState(userId);
-        showToast({
-          type: 'success',
-          title: '🔮 AI 심층 해석 완료',
-          message: '세계관 페르소나의 맞춤 조언이 완성되었습니다.'
-        });
-      } else {
-        const err = await res.json();
-        showToast({
-          type: 'error',
-          title: 'AI 해석 오류',
-          message: err.detail || "AI 해석 요청에 실패했습니다."
-        });
+      let data: LlmInterpretationResult | null = null;
+      if (API_BASE_URL && !userState?.is_guest) {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v1/interpret/${omikujiResult.history_id}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-user-id': userId
+            },
+            body: JSON.stringify({
+              user_context: context
+            })
+          });
+          if (res.ok) data = await res.json();
+        } catch {}
       }
+
+      // Standalone Fallback (오프라인 룰베이스/감성 AI 해석)
+      if (!data) {
+        data = await LocalGameService.interpretOmikuji(omikujiResult.history_id, context);
+      }
+
+      setLlmResult(data);
+      showToast({
+        type: 'success',
+        title: '🔮 AI 심층 해석 완료',
+        message: '세계관 페르소나의 맞춤 조언이 완성되었습니다.'
+      });
     } catch (e) {
       console.error(e);
     } finally {

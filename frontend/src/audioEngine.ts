@@ -433,6 +433,118 @@ export const AudioEngine = {
     } catch (e) {
       // AudioContext unallowed or muted
     }
+  },
+
+  /**
+   * 오미쿠지 산통 흔들기 달그락 소리 (Bamboo cylinder rattle)
+   */
+  playOmikujiRattleSound: () => {
+    if (isMuted) return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+
+      // 4연속 대나무 막대 부딪히는 달그락 리듬
+      const rattleOffsets = [0, 0.08, 0.16, 0.24, 0.32];
+      rattleOffsets.forEach((offset, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const t = now + offset;
+
+        osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
+        const baseFreq = 520 + (idx * 90) % 300 + (Math.random() * 80);
+        osc.frequency.setValueAtTime(baseFreq, t);
+        osc.frequency.exponentialRampToValueAtTime(180, t + 0.06);
+
+        gain.gain.setValueAtTime(0.35 + Math.random() * 0.15, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(t);
+        osc.stop(t + 0.07);
+      });
+    } catch (e) {
+      // ignore
+    }
+  },
+
+  /**
+   * 점괘 막대 톡 솟아오르는 소리 (Stick pop)
+   */
+  playOmikujiStickSound: () => {
+    if (isMuted) return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.19);
+    } catch (e) {
+      // ignore
+    }
+  },
+
+  /**
+   * 붉은 낙관 인장 쾅 찍히는 도장 소리 (Seal stamp thud)
+   */
+  playOmikujiStampSound: () => {
+    if (isMuted) return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+
+      // 묵직한 쿵
+      const subOsc = ctx.createOscillator();
+      const subGain = ctx.createGain();
+      subOsc.type = 'sine';
+      subOsc.frequency.setValueAtTime(160, now);
+      subOsc.frequency.exponentialRampToValueAtTime(35, now + 0.28);
+      subGain.gain.setValueAtTime(0.6, now);
+      subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+      subOsc.connect(subGain);
+      subGain.connect(ctx.destination);
+
+      // 종이 탁 타격감
+      const snapOsc = ctx.createOscillator();
+      const snapGain = ctx.createGain();
+      snapOsc.type = 'triangle';
+      snapOsc.frequency.setValueAtTime(800, now);
+      snapOsc.frequency.exponentialRampToValueAtTime(120, now + 0.08);
+      snapGain.gain.setValueAtTime(0.35, now);
+      snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+      snapOsc.connect(snapGain);
+      snapGain.connect(ctx.destination);
+
+      subOsc.start(now);
+      subOsc.stop(now + 0.32);
+      snapOsc.start(now);
+      snapOsc.stop(now + 0.1);
+    } catch (e) {
+      // ignore
+    }
   }
 };
 

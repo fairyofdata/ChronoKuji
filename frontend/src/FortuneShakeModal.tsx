@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SPOTS } from './constants';
+import { AudioEngine } from './audioEngine';
 
 interface FortuneShakeModalProps {
   isOpen: boolean;
@@ -17,58 +18,6 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
 
   const spot = SPOTS.find(s => s.id === spotId);
 
-  // Web Audio API를 활용한 대나무 산통 타악 사운드 FX
-  const playBambooSound = () => {
-    try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(160 + Math.random() * 60, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.08);
-
-      gain.gain.setValueAtTime(0.4, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start();
-      osc.stop(ctx.currentTime + 0.09);
-    } catch {
-      // Audio might be muted or context blocked
-    }
-  };
-
-  // 인장 타격 사운드 FX
-  const playSealSound = () => {
-    try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(360, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.5);
-
-      gain.gain.setValueAtTime(0.5, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start();
-      osc.stop(ctx.currentTime + 0.55);
-    } catch {
-      // ignore
-    }
-  };
-
   useEffect(() => {
     if (isOpen) {
       setShakeCount(0);
@@ -82,7 +31,7 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
     if (shakeCount >= targetShakes || isAnimating || isStickEjecting) return;
 
     setIsAnimating(true);
-    playBambooSound();
+    AudioEngine.playOmikujiRattleSound();
 
     // Haptic vibration feedback
     if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
@@ -97,14 +46,15 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
       // 마지막 흔듦 달성 시 나무 막대 솟구침 -> 종이 언폴딩 연출
       if (nextCount >= targetShakes) {
         setIsStickEjecting(true);
-        playBambooSound();
+        AudioEngine.playOmikujiStickSound();
+
         if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
           window.navigator.vibrate([80, 50, 120]);
         }
 
         setTimeout(() => {
           setIsUnfolding(true);
-          playSealSound();
+          AudioEngine.playOmikujiStampSound();
 
           setTimeout(() => {
             onComplete();
