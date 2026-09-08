@@ -6,8 +6,9 @@
 
 ---
 
-![ChronoKuji Banner](frontend/public/assets/worlds/spot_11_harrypotter.jpg)
+![ChronoKuji Banner](frontend/public/assets/worlds/lobby_rift.jpg)
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-chronokuji.web.app-00C7B7.svg?style=for-the-badge&logo=firebase&logoColor=white)](https://chronokuji.web.app)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-009688.svg?style=flat-square&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-19.0.0-61DAFB.svg?style=flat-square&logo=React&logoColor=black)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-8.0-646CFF.svg?style=flat-square&logo=Vite&logoColor=white)](https://vitejs.dev)
@@ -17,7 +18,7 @@
 
 **"12개 세계관을 넘나드는 시공간 워프, 7대 정통 점괘, 그리고 LLM 심층 운명 해석"**
 
-[주요 기능](#-주요-기능) • [12대 세계관](#-12대-멀티버스-세계관) • [시스템 아키텍처](#-시스템-아키텍처) • [로컬 실행 가이드](#-로컬-실행-가이드) • [면책 조항](#-면책-조항-disclaimer)
+[🌐 라이브 앱 접속 (Live App)](https://chronokuji.web.app) • [주요 기능](#-주요-기능) • [12대 세계관](#-12대-멀티버스-세계관) • [시스템 아키텍처](#-시스템-아키텍처) • [로컬 실행 가이드](#-로컬-실행-가이드) • [면책 조항](#-면책-조항-disclaimer)
 
 </div>
 
@@ -27,41 +28,48 @@
 
 **ChronoKuji (크로노쿠지)**는 일본의 전통 신사 점괘(오미쿠지) 문화에 **12가지 서브컬처 멀티버스 세계관**과 **Google Gemini LLM 심층 상담 AI**, 그리고 **크로노 트리거풍의 아련한 시공간 여행 사운드스케이프**를 결합한 차세대 웹 애플리케이션(PWA)입니다.
 
-사용자는 테일즈위버, 센과 치히로, 사이버펑크, 해리포터, 인터스텔라 등 시공간을 초월한 12개 세계관으로 직접 워프(Warp)하여 고유한 산통을 흔들고, 7대 정통 점괘와 5대 세부운(소원·연애·재물·사업·이동·기다림)을 점치며 차원 럭키 아이템을 수집합니다.
+시공간의 중심인 **「차원의 균열 성소」**를 기점으로 테일즈위버, 센과 치히로, 사이버펑크, 해리포터, 인터스텔라 등 시공간을 초월한 12개 세계관으로 직접 워프(Warp)하여 고유한 산통을 흔들고, 7대 정통 점괘와 5대 세부운(소원·연애·재물·사업·이동·기다림)을 점치며 차원 럭키 아이템을 수집합니다.
 
 ---
 
 ## ✨ 주요 기능 (Key Features)
 
-### 1. 🥠 정통 오미쿠지 7대 등급 & 5대 세부운 (84건 마스터 DB)
+### 1. ⚡ 차원 도약 회생제동 (Regenerative Warp Braking)
+- **인터랙티브 시공간 감속**: 60초의 시공간 항해 중, 화면(캔버스)을 탭하거나 전용 제동 버튼을 연타하여 차원 막의 마찰 파동을 역위상 코일로 흡수합니다.
+- **실시간 감속 (-3초/회)**: 회생 에너지를 흡수할 때마다 도착 시간이 3초씩 앞당겨지며 조기 감속 안착을 유도합니다.
+- **화려한 시각/음향 피드백**: 터치 지점에서 뻗어나가는 **전자기 번개 아크(Lightning Arc)**, 이중 충격파 링, 스파크 파티클, 플로팅 텍스트(`⚡ 회생제동 -3s`), 그리고 Web Audio API 기반의 **미래형 인버터 감속 공명음 SFX**가 생생하게 반응합니다.
+- **단계별 시공간 관측 Lore**: 15초 단위의 4단계 시공간 위상 안내 및 5초 주기 차원 캘리브레이션 로그 순환.
+
+### 2. 🥠 정통 오미쿠지 7대 등급 & 5대 세부운 (84건 마스터 DB)
 - **7대 정통 등급**: `[ 大吉(대길) | 中吉(중길) | 小吉(소길) | 吉(길) | 末吉(말길) | 凶(흉) | 大凶(대흉) ]`
 - **미니멀 5대 세부운**: 소원(願事), 인연(戀愛), 재물(金運), 사업(事業), 이동(旅行), 기다리는 사람(待人)
 - **전통 디테일**: 점괘 상단 운세 시(詩), 행운의 방위 및 숫자, 점괘 묶기(結び) & 지갑 보관 인터랙션
+- **타격감 넘치는 산통(神籤筒) 연출**: 모바일 가속도계 실제 흔들기 지원, 결과 발표 시 **붉은 낙관 인장이 '쾅!' 찍히는 시청각 타격감**.
 
-### 2. 🌌 PC 대개방형 2-컬럼 시네마틱 인터페이스 & 🖼️ 감상 모드
+### 3. 🌌 PC 대개방형 2-컬럼 시네마틱 인터페이스 & 🖼️ 감상 모드
 - **선명한 캔버스**: 브라우저 전체 화면에 현재 세계관의 고화질 원본 풍경이 생생하게 펼쳐집니다.
 - **초투명 플로팅 글래스**: 30% 투명도의 다크 글래스모피즘(`backdrop-blur-2xl`)으로 배경이 유기적으로 투과됩니다.
 - **🖼️ 감상 모드 (Zen Mode)**: 원클릭으로 모든 UI를 숨기고 8K 일러스트와 BGM만 감상하는 시네마틱 힐링 뷰 제공.
 
-### 3. 🌀 흉(凶) 반전 차원 왜곡 시네마틱 연출
+### 4. 🌀 흉(凶) 반전 차원 왜곡 시네마틱 연출
 - '흉'이 나왔을 때 태연하게 경고를 보여주다가, 하단 스크롤 시 **화면 전체에 보랏빛 차원 왜곡 글리치**가 폭발하며 *"어쩌면 다른 세계에서는 이 점괘가 대길일지도 모릅니다"*라는 메시지와 함께 **이세계의 구원 아이템이 소환**됩니다.
 
-### 4. 🎼 하이브리드 동적 사운드스케이프 (`AudioEngine`)
+### 5. 🎼 하이브리드 동적 사운드스케이프 (`AudioEngine`)
 - **3단계 사운드 라우팅**: 
-  - 최초 로비: `Chrono Trigger — Wind Scene (600 A.D.)`
+  - 최초 로비(성소): `Chrono Trigger — Wind Scene (600 A.D.)`
   - 차원 워프 중: `Chrono Trigger — Corridors of Time (12000 B.C.)`
   - 기록보관소: `메이플스토리 — 차원의 균열`
   - 스팟 도착: 각 세계관 고유 명곡 (`Hedwig's Theme`, `Second Run`, `Interstellar Theme` 등)
 - **YouTube 백그라운드 스트리밍**: 로컬 MP3가 없어도 0px 투명 IFrame 플레이어가 실시간 스트리밍!
-- **0바이트 Web Audio Synth 백업**: MP3 파일과 오프라인 상태에서도 핑크 노이즈 환경음을 합성하여 무음 방지.
+- **0바이트 Web Audio Synth 백업**: 오프라인 상태에서도 회생제동 인버터음, 도장 타격음, 핑크 노이즈 환경음을 직접 합성 생성.
 
-### 5. 📜 차원 점괘 기록보관소 (Fate Archive)
-- 상단 헤더의 **`📜 기록`** 버튼을 통해 과거에 뽑았던 모든 점괘와 유저의 고민, AI 심층 해석을 타임라인 카드로 언제든지 열람할 수 있습니다.
+### 6. 🏛️ 차원의 균열 성소 & 11종 럭키 아이템 도감 (Codex)
+- 시공간의 중심 허브 **「차원의 균열 성소」**에서 11대 세계관의 전설적 럭키 아이템 컬렉션과 과거 운명 기록 열람.
+- 11종 도감을 모두 완성하면 히든 스팟인 **「12. 인터스텔라 테서렉트」**가 개방됩니다.
 
-### 6. 📱 PWA 모바일 최적화 & 리텐션
-- 전용 황금 쿠키 앱 아이콘 및 홈 화면 설치 배너 (설치 완료 시 **+1 보너스 토큰 충전**)
-- 실시간 20시간 토큰 쿨다운 타이머 & 🔥 연속 출석 스트릭 뱃지
-- 신규 방문자 5초 튜토리얼 초고속 워프 혜택
+### 7. 🛡️ 영구 $0 완전 무료(Zero-Cost) & 클라이언트 퍼스트 PWA
+- **클라이언트 퍼스트 복원력**: 백엔드 API 서버가 없거나 네트워크가 끊겨도 `LocalGameService`가 로컬 스토리지 기반으로 100% 자율 구동.
+- **모바일 PWA**: 전용 황금 쿠키 앱 아이콘, 홈 화면 설치 배너, 20시간 AI 토큰 쿨다운 타이머 및 연속 출석 스트릭 지원.
 
 ---
 
@@ -90,19 +98,22 @@
 [ Frontend (React 19 + Vite 8 + Tailwind) ]
    │
    ├── MapSelector & Hero Panorama Stage (선명한 배경 + 2-컬럼 와이드 UI)
+   ├── WarpInteractiveCanvas (시공간 번개 아크 + 충격파 + 회생제동 연타)
+   ├── MovementTimer (회생제동 패널 + 15초 단계별 Lore + 5초 캘리브레이션)
    ├── FortuneShakeModal (4회 햅틱/흔들기 산통 모달)
-   ├── OmikujiView (7대 등급 + 5대 세부운 + 흉 반전 시네마틱)
+   ├── OmikujiView (7대 등급 + 5대 세부운 + 흉 반전 시네마틱 + 도장 연출)
    ├── HistoryModal (과거 점괘 & AI 해석 타임라인)
    ├── CodexModal (11종 차원 럭키 아이템 수집기)
-   └── AudioEngine (싱글톤 BGM 라우팅 + Web Audio Synth)
+   ├── LocalGameService (100% 독립 구동 클라이언트 퍼스트 서비스)
+   └── AudioEngine (절차적 Web Audio Synth + 유튜브 스트리밍)
    │
-   ▼ HTTP / JSON
+   ▼ HTTP / JSON (선택적 백엔드 연동)
 [ Backend (FastAPI + SQLAlchemy + SQLite) ]
    │
-   ├── /api/v1/movement (60초 타임록 및 지연 평가 도착 검증)
-   ├── /api/v1/omikuji (77+7건 정통 마스터 DB 및 이력 저장)
-   ├── /api/v1/interpret (Google Gemini 2.5 Flash 기반 5대 세부운 융합 해석)
-   └── /api/v1/users (UUID 게스트 인증 + 20시간 토큰 쿨다운 리필)
+   ├── /api/v1/movement (60초 타임록 및 회생제동 동기화)
+   ├── /api/v1/omikuji (84건 정통 마스터 DB 및 히스토리)
+   ├── /api/v1/interpret (Google Gemini 2.5 Flash 기반 5대 운세 종합 해석)
+   └── /api/v1/users (Google Auth / UUID 게스트 인증 및 20시간 리필)
 ```
 
 ---
@@ -118,7 +129,7 @@
 git clone https://github.com/fairyofdata/ChronoKuji.git
 cd ChronoKuji
 
-# .env 파일 생성 및 Gemini API 키 등록
+# .env 파일 생성 및 Gemini API 키 등록 (선택)
 echo GEMINI_API_KEY=your_gemini_api_key_here > .env
 ```
 
@@ -145,12 +156,12 @@ npm run dev
 
 ## 🎵 배경음악(BGM) 추가 가이드 (Optional)
 
-저작권 보호를 위해 상용 음원 파일(`.mp3`)은 저장소에 포함되어 있지 않으며, 기본 상태에서는 **Web Audio API 신디사이저 앰비언스**가 자동 재생됩니다.
+저작권 보호를 위해 상용 음원 파일(`.mp3`)은 저장소에 포함되어 있지 않으며, 기본 상태에서는 **YouTube 백그라운드 스트리밍** 및 **Web Audio API 프로시저럴 신디사이저**가 자동 재생됩니다.
 
-원작 명곡을 듣고 싶으시다면, 개인 소장 MP3 파일을 아래 경로에 이름에 맞게 넣어주시면 즉시 고음질로 재생됩니다:
+원작 고음질 MP3를 소장하고 계실 경우, 아래 경로에 파일명을 맞추어 넣어주시면 즉시 로컬 고음질로 재생됩니다:
 
-- `frontend/public/assets/audio/bgm/lobby_rift.mp3` (메이플스토리 차원의 균열)
-- `frontend/public/assets/audio/bgm/traveling_time_path.mp3` (메이플스토리 시간의 길)
+- `frontend/public/assets/audio/bgm/chrono_wind_scene.mp3`
+- `frontend/public/assets/audio/bgm/chrono_corridors_of_time.mp3`
 - `frontend/public/assets/audio/bgm/spot_1_kraiden.mp3` ~ `spot_12_tesseract.mp3`
 - `frontend/public/assets/audio/bgm/extra/tangled_kingdom_dance.mp3`
 
@@ -158,6 +169,6 @@ npm run dev
 
 ## ⚖️ 면책 조항 (Disclaimer)
 
-- 본 프로젝트는 **비영리 팬 메이드(Fan-made) 오픈소스 토이 프로젝트**입니다.
-- 프로젝트 내에 등장하는 각 세계관(IP), 캐릭터 및 작품명의 모든 지적재산권과 상표권은 각 원저작권자에게 귀속됩니다.
-- 본 저장소의 배경 및 아이템 일러스트는 Google AI를 통해 독자적으로 생성된 비영리 팬아트 에셋입니다.
+- 본 프로젝트는 **비영리 팬메이드(Fan-made) 오픈소스 토이 프로젝트**입니다.
+- 프로젝트 내에 등장하는 각 세계관(IP), 캐릭터 및 작품명의 모든 지식재산권과 상표권은 각 원저작권자에게 귀속됩니다.
+- 본 저장소의 배경 및 아이템 일러스트는 Google AI를 통해 비상업적 용도로 독자 생성된 디지털 에셋입니다.

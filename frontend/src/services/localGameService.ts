@@ -103,6 +103,24 @@ export class LocalGameService {
   }
 
   /**
+   * 차원 도약 회생제동 (Regenerative Warp Braking)
+   * 시공간 파동 에너지를 회생 코일로 흡수하여 목적지 도착 예상 시간을 조기 감속 안착시킴
+   */
+  static brakeMovement(seconds: number): UserState {
+    const state = this.getUserState();
+    if (state.target_spot_id !== null && state.arrival_time && !state.is_arrived) {
+      const currentArrival = new Date(state.arrival_time).getTime();
+      const newArrival = Math.max(Date.now(), currentArrival - (seconds * 1000));
+      state.arrival_time = new Date(newArrival).toISOString();
+      if (newArrival <= Date.now()) {
+        state.is_arrived = true;
+      }
+      this.saveUserState(state);
+    }
+    return state;
+  }
+
+  /**
    * 오미쿠지 뽑기
    */
   static drawOmikuji(spotId: number): OmikujiResult {

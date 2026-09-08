@@ -6,8 +6,9 @@
 
 ---
 
-![ChronoKuji Banner](frontend/public/assets/worlds/spot_11_harrypotter.jpg)
+![ChronoKuji Banner](frontend/public/assets/worlds/lobby_rift.jpg)
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-chronokuji.web.app-00C7B7.svg?style=for-the-badge&logo=firebase&logoColor=white)](https://chronokuji.web.app)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-009688.svg?style=flat-square&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-19.0.0-61DAFB.svg?style=flat-square&logo=React&logoColor=black)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-8.0-646CFF.svg?style=flat-square&logo=Vite&logoColor=white)](https://vitejs.dev)
@@ -17,7 +18,7 @@
 
 **"Spacetime Warp Across 12 Multiverse Worlds, 7 Authentic Fortune Ranks, and Deep LLM Fate Interpretation"**
 
-[Key Features](#-key-features) • [12 Multiverse Worlds](#-12-multiverse-worlds) • [Architecture](#-system-architecture) • [Quick Start](#-quick-start) • [Disclaimer](#-disclaimer)
+[🌐 Play Live Web App](https://chronokuji.web.app) • [Key Features](#-key-features) • [12 Multiverse Worlds](#-12-multiverse-worlds) • [Architecture](#-system-architecture) • [Quick Start](#-quick-start) • [Disclaimer](#-disclaimer)
 
 </div>
 
@@ -27,41 +28,48 @@
 
 **ChronoKuji** is a next-generation Progressive Web Application (PWA) that blends traditional Japanese Shinto shrine fortune slips (**Omikuji**) with **12 subculture multiverse worlds**, **Google Gemini LLM deep fortune counseling**, and nostalgic **Chrono Trigger-style spacetime soundscapes**.
 
-Travelers embark on a 60-second spacetime warp to iconic fictional universes (TalesWeaver, Spirited Away, Cyberpunk, Harry Potter, Interstellar, and more) to shake authentic fortune boxes, reveal 7 traditional luck tiers with 5 sub-fortunes (Wishes, Romance, Wealth, Career, Travel, and Awaiting), and collect dimensional Lucky Items.
+Departing from the central hub—**The Dimensional Rift Sanctuary**, travelers embark on a spacetime warp to iconic fictional universes (TalesWeaver, Spirited Away, Cyberpunk, Harry Potter, Interstellar, and more) to shake authentic fortune boxes, reveal 7 traditional luck tiers with 5 sub-fortunes (Wishes, Romance, Wealth, Career, Travel, and Awaiting), and collect dimensional Lucky Items.
 
 ---
 
 ## ✨ Key Features
 
-### 1. 🥠 Authentic 7 Omikuji Ranks & 5 Sub-Fortunes (84 Master DB Entries)
+### 1. ⚡ Regenerative Warp Braking (차원 도약 회생제동)
+- **Interactive Spacetime Deceleration**: During the 60-second spacetime journey, tapping the interactive canvas or clicking the dedicated brake button absorbs dimensional friction waves via anti-phase coils.
+- **Dynamic Reduction (-3s per tap)**: Each absorbed pulse advances arrival by 3 seconds, enabling travelers to reach their destination early.
+- **Rich Visual & Audio Feedback**: Displays **lightning arcs**, double shockwave rings, electric spark particles, floating text (`⚡ 회생제동 -3s`), and procedural **cybernetic inverter deceleration SFX** synthesized via Web Audio API.
+- **Stepwise Lore & Calibration**: 4-phase stepwise lore (every 15s) and periodic spacetime calibration logs (every 5s).
+
+### 2. 🥠 Authentic 7 Omikuji Ranks & 5 Sub-Fortunes (84 Master DB Entries)
 - **7 Traditional Luck Tiers**: `[ Dai-Kichi (Great Luck) | Chu-Kichi (Middle) | Sho-Kichi (Small) | Kichi (Luck) | Sue-Kichi (Future Luck) | Kyo (Bad Luck) | Dai-Kyo (Terrible Luck) ]`
 - **Minimalist 5 Sub-Fortunes**: Wishes (願事), Romance (戀愛), Wealth (金運), Career (事業), Travel (旅行), and Awaiting News (待人).
 - **Ritual Interactions**: Poetic verses (詩), Lucky directions & numbers, and knotting slips (結び) or wallet storage.
+- **Haptic Gacha Box**: Physical device shake support (accelerometer) and punchy red vermilion seal stamp sound.
 
-### 2. 🌌 Open Cinematic 2-Column Desktop UI & 🖼️ Zen Mode
+### 3. 🌌 Open Cinematic 2-Column Desktop UI & 🖼️ Zen Mode
 - **Vivid Canvas**: High-resolution original background art is rendered clearly across the entire browser viewport with subtle cinematic dark vignetting.
 - **Ultra-Clear Floating Glass**: 30% opacity glassmorphism (`backdrop-blur-2xl`) allows background landscapes to shine through seamlessly.
 - **🖼️ Zen Mode (Cinema View)**: Hide all UI panels with a single click to enjoy 8K artwork and background music in pure tranquility.
 
-### 3. 🌀 Reversal Rift Glitch for Bad Luck (凶)
+### 4. 🌀 Reversal Rift Glitch for Bad Luck (凶)
 - When a traveler draws 'Bad Luck' (凶), scrolling down triggers a **full-screen purple dimensional glitch animation** declaring *"Perhaps in an alternate reality, this fortune is the greatest blessing"*, summoning a savior Lucky Item from another dimension.
 
-### 4. 🎼 3-Tier Hybrid Smart Soundscape (`AudioEngine`)
+### 5. 🎼 3-Tier Hybrid Smart Soundscape (`AudioEngine`)
 - **Seamless 3-Stage Routing**:
   - Sanctuary Lobby: `Chrono Trigger — Wind Scene (600 A.D.)`
   - Spacetime Warp: `Chrono Trigger — Corridors of Time (12000 B.C.)`
   - Fate Archive: `MapleStory — Dimensional Rift`
   - Arrived Spots: Iconic world themes (`Hedwig's Theme`, `Second Run`, `Interstellar Theme`, etc.)
 - **YouTube Background Streaming**: Transparent 0px IFrame player streams verified YouTube audio in real-time when local MP3s are absent (Zero copyright risk, zero repo weight).
-- **Web Audio Synth Fallback**: 0-byte procedural pink noise ambiance generator ensures sound even when offline.
+- **Web Audio Synth Fallback**: Procedural oscillator synthesis generates pink noise ambiance, brake hum, and seal thuds offline.
 
-### 5. 🏛️ Dimensional Rift Sanctuary & Fate Archive
-- Collectibles and Fate History are exclusively accessible from the central hub—**The Dimensional Rift Sanctuary**.
-- Travelers can return to the Sanctuary anytime via the warp dropdown to view their chronological fortune archive and unlocked Codex items.
+### 6. 🏛️ Dimensional Rift Sanctuary & Codex Items
+- The central hub—**The Dimensional Rift Sanctuary**—houses the 11-dimension collectible item Codex and chronological fate archive.
+- Completing all 11 Codex items unlocks the hidden 12th dimension: **⭐ Interstellar 5D Tesseract**.
 
-### 6. 📱 Mobile PWA Ready
-- Custom golden cookie app icon with install prompt banner (+1 bonus token upon install).
-- 20-hour token cooldown timer and daily attendance streak badges.
+### 7. 🛡️ Zero-Cost ($0 Spark Plan) & Client-First PWA
+- **Resilient Client-First Mode**: When backend servers are unavailable, `LocalGameService` seamlessly manages gameplay, inventory, and saves locally in LocalStorage.
+- **Mobile PWA Ready**: Custom golden cookie app icon, home screen install prompt, 20-hour token cooldown timer, and daily attendance streak badges.
 
 ---
 
@@ -90,16 +98,19 @@ Travelers embark on a 60-second spacetime warp to iconic fictional universes (Ta
 [ Frontend (React 19 + Vite 8 + Tailwind CSS) ]
    │
    ├── MapSelector & Hero Panorama Stage (Open 2-Column Responsive UI)
+   ├── WarpInteractiveCanvas (Lightning Arcs + Shockwaves + Regenerative Braking)
+   ├── MovementTimer (Braking Control Pad + Stepwise Lore + Periodic Logs)
    ├── FortuneShakeModal (4-Tap / Device Haptic Gyroscope Shake)
-   ├── OmikujiView (7 Luck Ranks + 5 Sub-Fortunes + Reversal Glitch)
+   ├── OmikujiView (7 Luck Ranks + 5 Sub-Fortunes + Reversal Glitch + Seal Stamp)
    ├── HistoryModal (Chronological Fate & AI Counseling Archive)
    ├── CodexModal (11-Dimension Collectible Item Codex)
+   ├── LocalGameService (100% Autonomous Client-First Standalone Mode)
    └── AudioEngine (Singleton BGM Router + YouTube IFrame + Web Audio Synth)
    │
-   ▼ HTTP / JSON
+   ▼ HTTP / JSON (Optional Backend API)
 [ Backend (FastAPI + SQLAlchemy + SQLite) ]
    │
-   ├── /api/v1/movement (60s Timelock & Lazy-Evaluated Arrival Validation)
+   ├── /api/v1/movement (60s Timelock & Regenerative Braking Sync)
    ├── /api/v1/omikuji (84 Pre-cached Master DB Entries & History Storage)
    ├── /api/v1/interpret (Google Gemini 2.5 Flash Persona Counseling)
    └── /api/v1/users (Frictionless UUID Guest Auth & 20h Token Cooldown)
@@ -118,7 +129,7 @@ Travelers embark on a 60-second spacetime warp to iconic fictional universes (Ta
 git clone https://github.com/fairyofdata/ChronoKuji.git
 cd ChronoKuji
 
-# Create .env and set your Google Gemini API Key
+# Create .env and set your Google Gemini API Key (Optional)
 echo GEMINI_API_KEY=your_gemini_api_key_here > .env
 ```
 
@@ -143,7 +154,7 @@ npm run dev
 
 ---
 
-## 🎵 Custom BGM Guide (Bring Your Own Assets)
+## 🎵 Custom BGM Guide (Optional)
 
 For copyright compliance, proprietary `.mp3` files are excluded from this repository. The app automatically uses **real-time YouTube background streaming** or procedural **Web Audio Synth** by default.
 
@@ -151,6 +162,7 @@ If you own personal audio tracks, place them in:
 - `frontend/public/assets/audio/bgm/chrono_wind_scene.mp3`
 - `frontend/public/assets/audio/bgm/chrono_corridors_of_time.mp3`
 - `frontend/public/assets/audio/bgm/spot_1_kraiden.mp3` ~ `spot_12_tesseract.mp3`
+- `frontend/public/assets/audio/bgm/extra/tangled_kingdom_dance.mp3`
 
 ---
 

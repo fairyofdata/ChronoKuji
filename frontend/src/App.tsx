@@ -459,6 +459,34 @@ function AppContent() {
     }
   };
 
+  // 7-0. Regenerative Warp Braking Handler (차원 도약 회생제동)
+  const handleWarpBrake = (seconds: number = 3) => {
+    if (!userState?.arrival_time || userState.is_arrived) return;
+
+    // 회생제동 인버터 공명 SFX 재생
+    AudioEngine.playWarpBrakeSound();
+
+    // LocalGameService 상태 갱신
+    LocalGameService.brakeMovement(seconds);
+
+    // React 상태 및 남은 시간 갱신
+    const currentArrivalMs = parseUtcDate(userState.arrival_time);
+    const newArrivalMs = Math.max(Date.now(), currentArrivalMs - (seconds * 1000));
+    const newArrivalIso = new Date(newArrivalMs).toISOString();
+    const remainingSec = Math.max(0, Math.ceil((newArrivalMs - Date.now()) / 1000));
+
+    setTimeLeft(remainingSec);
+    setUserState(prev => prev ? {
+      ...prev,
+      arrival_time: newArrivalIso
+    } : null);
+
+    // 회생제동으로 남은 시간이 0초에 도달하면 즉시 자동 안착
+    if (remainingSec <= 0) {
+      handleArrive();
+    }
+  };
+
   // 7-1. Admin Instant Teleport Handler (0s Bypass)
   const handleAdminTeleport = async (spotId: number) => {
     if (!userId) return;
@@ -658,6 +686,7 @@ function AppContent() {
                 userState={userState}
                 timeLeft={timeLeft}
                 onArrive={handleArrive}
+                onBrake={handleWarpBrake}
                 isAdmin={isAdmin}
               />
             </div>

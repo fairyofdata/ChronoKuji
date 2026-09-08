@@ -545,6 +545,63 @@ export const AudioEngine = {
     } catch (e) {
       // ignore
     }
+  },
+
+  /**
+   * 차원 도약 회생제동 (Regenerative Warp Braking) 사운드
+   * 차원 파동 에너지를 역위상 코일로 급속 흡수하는 고주파 전기 인버터 공명음
+   */
+  playWarpBrakeSound: () => {
+    if (isMuted) return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+
+      // 1. 회생 인버터 공명음 (위잉- 상승 후 안정화)
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(780, now + 0.08);
+      osc.frequency.exponentialRampToValueAtTime(440, now + 0.22);
+
+      // 저역통과 필터로 부드럽고 묵직한 SF 사운드 형성
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1200, now);
+      filter.frequency.linearRampToValueAtTime(2400, now + 0.08);
+      filter.frequency.exponentialRampToValueAtTime(600, now + 0.22);
+
+      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.25);
+
+      // 2. 고주파 에너지 아크 펄스 (치링- 찌릿)
+      const subPulse = ctx.createOscillator();
+      const pulseGain = ctx.createGain();
+      subPulse.type = 'sine';
+      subPulse.frequency.setValueAtTime(1050, now);
+      subPulse.frequency.exponentialRampToValueAtTime(1800, now + 0.06);
+
+      pulseGain.gain.setValueAtTime(0.18, now);
+      pulseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+      subPulse.connect(pulseGain);
+      pulseGain.connect(ctx.destination);
+
+      subPulse.start(now);
+      subPulse.stop(now + 0.14);
+    } catch (e) {
+      // ignore
+    }
   }
 };
 

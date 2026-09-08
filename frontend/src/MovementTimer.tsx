@@ -9,6 +9,7 @@ interface MovementTimerProps {
   timeLeft: number;
   isAdmin: boolean;
   onArrive: () => void;
+  onBrake?: (seconds: number) => void;
 }
 
 // 5초마다 순환되는 시공간 차원 관측 로그 멘트 목록
@@ -22,15 +23,23 @@ const SPACETIME_LOGS = [
   "🥠 운명의 산통(神籤) 공명 주파수와 차원 링크 연결...",
   "🚀 초공간 도약 추진체 임계 출력 유지 중...",
   "🔮 목적지 차원의 운명장(Fate Matrix) 스캔 진행 중...",
-  "⚡ 시공간 감속 개시... 차원 브레이크 작동 중.",
+  "⚡ 시공간 감속 개시... 차원 브레이크 회생제동 대기 중.",
   "🎯 현지 대기권 및 시공간 좌표 록온 완료!",
   "✨ 차원 게이트 개방 임박! 목적지에 안전하게 안착합니다..."
 ];
 
-export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive }: MovementTimerProps) {
+export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, onBrake }: MovementTimerProps) {
   const [logIndex, setLogIndex] = useState(0);
-  const isAutoArrivingRef = useRef(false);
+  const [totalBrakedSeconds, setTotalBrakedSeconds] = useState(0);
+  const [isBrakingPulse, setIsBrakingPulse] = useState(false);
   const hasCountedDownRef = useRef(false);
+
+  const handleBrakeTrigger = (sec: number = 3) => {
+    setTotalBrakedSeconds(prev => prev + sec);
+    setIsBrakingPulse(true);
+    setTimeout(() => setIsBrakingPulse(false), 300);
+    onBrake?.(sec);
+  };
 
   const isMoving = userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && !userState?.current_spot_id;
   const isTargetRift = userState?.target_spot_id === 0;
@@ -86,13 +95,14 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive }
             alt="목적지" 
             className="w-full h-full object-cover filter brightness-90 animate-pulse transition duration-1000" 
           />
-          {/* Interactive Spacetime Ripple Canvas */}
-          <WarpInteractiveCanvas />
+          {/* Interactive Spacetime Ripple Canvas with Regenerative Braking */}
+          <WarpInteractiveCanvas onBrake={handleBrakeTrigger} />
 
           <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent flex items-end justify-between p-3.5 z-20 pointer-events-none">
             <div className="text-left">
-              <span className="text-[10px] font-extrabold text-cyan-400 uppercase tracking-widest block">
-                Target Dimension • 탭하여 시공간 파동 발생
+              <span className="text-[10px] font-extrabold text-cyan-400 uppercase tracking-widest block flex items-center space-x-1">
+                <span>⚡</span>
+                <span>Regenerative Braking • 화면 탭 시 회생제동 (-3s)</span>
               </span>
               <span className="text-xs sm:text-sm font-black text-white drop-shadow-md">
                 {isTargetRift ? "차원의 균열 성소" : `${targetSpot?.locationName} (${targetSpot?.worldName})`}
@@ -107,7 +117,7 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive }
         {/* Warp Stream Progress Gauge */}
         <div className="w-full bg-gray-950 rounded-full h-4 border border-cyan-500/30 overflow-hidden shadow-inner relative p-0.5">
           <div 
-            className="bg-gradient-to-r from-purple-600 via-cyan-400 to-emerald-400 h-full rounded-full transition-all duration-1000 ease-linear relative overflow-hidden"
+            className={`bg-gradient-to-r from-purple-600 via-cyan-400 to-emerald-400 h-full rounded-full transition-all duration-300 ease-linear relative overflow-hidden ${isBrakingPulse ? 'brightness-150' : ''}`}
             style={{ width: `${progressPercent}%` }}
           >
             {/* Warp Light Streaks Effect */}
@@ -119,11 +129,18 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive }
         <div className="flex flex-col items-center space-y-1">
           {currentSeconds > 0 ? (
             <>
-              <p className="text-4xl sm:text-5xl font-mono text-white font-black tracking-widest drop-shadow-lg">
-                {currentSeconds}<span className="text-base font-normal text-cyan-400 ml-1">초</span>
-              </p>
+              <div className="flex items-baseline space-x-2">
+                <p className="text-4xl sm:text-5xl font-mono text-white font-black tracking-widest drop-shadow-lg">
+                  {currentSeconds}<span className="text-base font-normal text-cyan-400 ml-1">초</span>
+                </p>
+                {totalBrakedSeconds > 0 && (
+                  <span className="text-xs font-mono font-bold text-yellow-300 bg-yellow-950/70 border border-yellow-500/40 px-2 py-0.5 rounded-full animate-bounce">
+                    ⚡ -{totalBrakedSeconds}s 회생제동됨
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-gray-400 font-medium">
-                시공간 궤도를 항해하고 있습니다. (화면을 탭해보세요 ✨)
+                시공간 궤도를 항해하고 있습니다. (화면 탭 / 연타로 회생제동 가능 ⚡)
               </p>
             </>
           ) : (
@@ -131,6 +148,40 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive }
               <span>✨ 차원 진입 중... 잠시 후 자동 안착합니다.</span>
             </div>
           )}
+        </div>
+
+        {/* Regenerative Warp Braking Dedicated Control Pad */}
+        <div className={`w-full bg-gradient-to-r from-cyan-950/60 via-blue-950/60 to-purple-950/60 border rounded-2xl p-3 sm:p-4 shadow-xl flex flex-col space-y-2.5 transition-all duration-200 ${isBrakingPulse ? 'border-cyan-300 shadow-cyan-500/20 scale-[1.01]' : 'border-cyan-500/30'}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1.5">
+              <span className="text-base">⚡</span>
+              <span className="text-xs sm:text-sm font-black text-cyan-200 tracking-tight">
+                차원 도약 회생제동 (Regenerative Warp Braking)
+              </span>
+            </div>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-950/90 border border-cyan-400/40 text-cyan-300">
+              파동 에너지 흡수 중
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleBrakeTrigger(3)}
+            disabled={currentSeconds <= 0}
+            className="w-full relative overflow-hidden group py-2.5 sm:py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-600/30 via-blue-600/30 to-purple-600/30 border border-cyan-400/60 hover:border-cyan-300 hover:bg-cyan-500/20 active:scale-95 transition-all duration-150 flex items-center justify-center space-x-2 shadow-lg disabled:opacity-50"
+          >
+            <span className="text-base group-hover:scale-125 transition-transform duration-200">⚡</span>
+            <span className="text-xs sm:text-sm font-black text-cyan-100 group-hover:text-white">
+              차원 파동 흡수 회생제동 (탭 / 연타)
+            </span>
+            <span className="text-[10px] text-yellow-300 font-extrabold bg-black/50 px-2 py-0.5 rounded border border-yellow-500/30">
+              -3초 감속
+            </span>
+          </button>
+
+          <p className="text-[10px] text-gray-400 text-center leading-relaxed">
+            시공간 마찰 에너지를 역위상 코일로 흡수하여 추진력을 감속하고 타임라인에 조기 안착합니다.
+          </p>
         </div>
 
         {/* Spacetime Lore & Hint Flip Card (15-Second Stepwise Lore) */}
