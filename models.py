@@ -63,3 +63,7 @@ class OmikujiHistory(Base):
     # LLM 심층 해석 데이터
     user_context: Mapped[Optional[str]] = mapped_column(Text, nullable=True) # 유저의 고민 입력
     llm_interpretation: Mapped[Optional[dict[str, Any]]] = mapped_column(JSON, nullable=True) # 구조화된 LLM 결과 저장
+    
+    # LLM 응답 평가 및 RLHF/Fine-tuning용 피드백 수집
+    feedback_rating: Mapped[Optional[int]] = mapped_column(Integer, nullable=True) # 1: 긍정(도움됨), -1: 부정(부족함)
+    feedback_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True) # 사용자 피드백 사유

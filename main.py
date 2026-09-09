@@ -5,15 +5,25 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.future import select
 
 from database import engine, AsyncSessionLocal
-from models import Base, Spot
+from models import Base, Spot, OmikujiMaster
 from seed_data import seed_dummy_data
-from routers import users, movement, omikuji, interpret
+from routers import users, movement, omikuji, interpret, stats
+
+from sqlalchemy import text
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 1. 앱 시작 시 테이블 자동 생성
+    # 1. 앱 시작 시 테이블 자동 생성 및 신규 컬럼 안전 마이그레이션
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        try:
+            await conn.execute(text("ALTER TABLE omikuji_histories ADD COLUMN feedback_rating INTEGER"))
+        except Exception:
+            pass
+        try:
+            await conn.execute(text("ALTER TABLE omikuji_histories ADD COLUMN feedback_text TEXT"))
+        except Exception:
+            pass
     
     # 2. 마스터 데이터(12개 스팟 & 84개 맞춤 오미쿠지) 확인 및 자동 갱신
     async with AsyncSessionLocal() as db:
@@ -48,6 +58,7 @@ app.include_router(users.router)
 app.include_router(movement.router)
 app.include_router(omikuji.router)
 app.include_router(interpret.router)
+app.include_router(stats.router)
 
 @app.post("/api/v1/admin/reseed")
 async def admin_reseed():

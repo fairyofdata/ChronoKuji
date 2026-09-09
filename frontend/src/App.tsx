@@ -7,6 +7,7 @@ import CodexModal from './CodexModal';
 import HistoryModal from './HistoryModal';
 import FortuneShakeModal from './FortuneShakeModal';
 import ShareTicketModal from './ShareTicketModal';
+import ObservatoryStatsModal from './ObservatoryStatsModal';
 import PwaInstallBanner from './PwaInstallBanner';
 import { SPOTS, CODEX_ITEMS } from './constants';
 import { AudioEngine } from './audioEngine';
@@ -16,9 +17,11 @@ import { parseUtcDate } from './utils/date';
 import { API_BASE_URL } from './config';
 import { LocalGameService } from './services/localGameService';
 import { ToastProvider, useToast } from './Toast';
+import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 import './App.css';
 
 function AppContent() {
+  const { language } = useLanguage();
   const [userId, setUserId] = useState<string | null>(() => localStorage.getItem('omikuz_user_id'));
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
@@ -35,6 +38,7 @@ function AppContent() {
   // Modals & UI States
   const [isCodexModalOpen, setIsCodexModalOpen] = useState<boolean>(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false);
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState<boolean>(false);
   const [isShakeModalOpen, setIsShakeModalOpen] = useState<boolean>(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   const [isZenMode, setIsZenMode] = useState<boolean>(false);
@@ -611,16 +615,17 @@ function AppContent() {
               'x-user-id': userId
             },
             body: JSON.stringify({
-              user_context: context
+              user_context: context,
+              language
             })
           });
           if (res.ok) data = await res.json();
         } catch {}
       }
 
-      // Standalone Fallback (오프라인 룰베이스/감성 AI 해석)
+      // Standalone Fallback (오프라인 룰베이스/감성 AI 해석 - 다국어 지원)
       if (!data) {
-        data = await LocalGameService.interpretOmikuji(omikujiResult.history_id, context);
+        data = await LocalGameService.interpretOmikuji(omikujiResult.history_id, context, language);
       }
 
       setLlmResult(data);
@@ -665,6 +670,7 @@ function AppContent() {
         tokenTimeLeft={tokenTimeLeft}
         onOpenCodex={() => setIsCodexModalOpen(true)}
         onOpenHistory={() => setIsHistoryModalOpen(true)}
+        onOpenStats={() => setIsStatsModalOpen(true)}
         codexCount={collectedItems.length}
         isCodexComplete={isCodexComplete}
         isZenMode={isZenMode}
@@ -804,6 +810,11 @@ function AppContent() {
         userId={userId}
       />
 
+      <ObservatoryStatsModal
+        isOpen={isStatsModalOpen}
+        onClose={() => setIsStatsModalOpen(false)}
+      />
+
       <FortuneShakeModal 
         isOpen={isShakeModalOpen}
         spotId={userState?.current_spot_id || 1}
@@ -827,8 +838,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ToastProvider>
-      <AppContent />
-    </ToastProvider>
+    <LanguageProvider>
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
+    </LanguageProvider>
   );
 }

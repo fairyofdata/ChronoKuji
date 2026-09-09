@@ -3,6 +3,7 @@ import { SPOTS, SYSTEM_AUDIO_TRACKS } from './constants';
 import { UserState } from './types';
 import { parseUtcDate } from './utils/date';
 import WarpInteractiveCanvas from './WarpInteractiveCanvas';
+import { useLanguage } from './i18n/LanguageContext';
 
 interface MovementTimerProps {
   userState: UserState | null;
@@ -12,23 +13,8 @@ interface MovementTimerProps {
   onBrake?: (seconds: number) => void;
 }
 
-// 5초마다 순환되는 시공간 차원 관측 로그 멘트 목록
-const SPACETIME_LOGS = [
-  "🌀 시공간 위상 왜곡 장치 가동... 차원 막을 통과합니다.",
-  "📡 현지 타임라인 중력장 및 크로노 파동 교정 중...",
-  "⚛️ 양자 얽힘 좌표 동기화 진행 중... 미지의 주파수 수신.",
-  "🛡️ 차원 회랑의 타임 패러독스 방어막 전개 완료.",
-  "🌌 도착지 세계관의 국소적 엔트로피 역전 현상 감지...",
-  "⏳ 과거와 미래의 인과율 축 정렬 중... 시공간 위상 동기화.",
-  "🥠 운명의 산통(神籤) 공명 주파수와 차원 링크 연결...",
-  "🚀 초공간 도약 추진체 임계 출력 유지 중...",
-  "🔮 목적지 차원의 운명장(Fate Matrix) 스캔 진행 중...",
-  "⚡ 시공간 감속 개시... 차원 브레이크 회생제동 대기 중.",
-  "🎯 현지 대기권 및 시공간 좌표 록온 완료!",
-  "✨ 차원 게이트 개방 임박! 목적지에 안전하게 안착합니다..."
-];
-
 export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, onBrake }: MovementTimerProps) {
+  const { t, getSpotTranslation } = useLanguage();
   const [logIndex, setLogIndex] = useState(0);
   const [totalBrakedSeconds, setTotalBrakedSeconds] = useState(0);
   const [isBrakingPulse, setIsBrakingPulse] = useState(false);
@@ -46,6 +32,12 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, 
   const targetSpot = (userState?.target_spot_id !== null && userState?.target_spot_id !== undefined)
     ? SPOTS.find(s => s.id === userState.target_spot_id) 
     : null;
+  const targetSpotInfo = targetSpot ? getSpotTranslation(targetSpot.id) : null;
+  const targetDisplay = isTargetRift 
+    ? t.movement.sanctuaryRift 
+    : targetSpotInfo 
+    ? `${targetSpotInfo.locationName} (${targetSpotInfo.worldName})` 
+    : "";
 
   // arrival_time 기반 실시간 오차 보정 시간 계산
   const arrivalMs = userState?.arrival_time ? parseUtcDate(userState.arrival_time) : 0;
@@ -56,11 +48,12 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, 
 
   // 1. 5초마다 관측 멘트 부드럽게 순환
   useEffect(() => {
+    const logsCount = t.movement.spacetimeLogs?.length || 12;
     const interval = setInterval(() => {
-      setLogIndex(prev => (prev + 1) % SPACETIME_LOGS.length);
+      setLogIndex(prev => (prev + 1) % logsCount);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [t.movement.spacetimeLogs]);
 
   // 카운트다운 시작 감지
   useEffect(() => {
@@ -79,7 +72,7 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, 
           <div className="flex items-center space-x-2 text-cyan-300 text-base sm:text-lg font-black tracking-tight animate-pulse">
             <span className="text-xl">🚀</span>
             <span>
-              [{isTargetRift ? "차원의 균열 (성소)" : `${targetSpot?.locationName} (${targetSpot?.worldName})`}] (으)로 도약 중...
+              [{targetDisplay}] — {t.movement.jumpingTo}
             </span>
           </div>
           <span className="text-[10px] font-bold px-3 py-0.5 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 flex items-center space-x-1 backdrop-blur-sm shadow">
@@ -102,14 +95,14 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, 
             <div className="text-left">
               <span className="text-[10px] font-extrabold text-cyan-400 uppercase tracking-widest block flex items-center space-x-1">
                 <span>⚡</span>
-                <span>Regenerative Braking • 화면 탭 시 회생제동 (-3s)</span>
+                <span>{t.movement.brakeCanvasHint}</span>
               </span>
               <span className="text-xs sm:text-sm font-black text-white drop-shadow-md">
-                {isTargetRift ? "차원의 균열 성소" : `${targetSpot?.locationName} (${targetSpot?.worldName})`}
+                {targetDisplay}
               </span>
             </div>
             <span className="text-[10px] font-bold text-yellow-300 bg-black/60 px-2 py-0.5 rounded-md border border-yellow-500/30">
-              {Math.round(progressPercent)}% 도약
+              {Math.round(progressPercent)}% {t.movement.warpProgress}
             </span>
           </div>
         </div>
@@ -131,21 +124,21 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, 
             <>
               <div className="flex items-baseline space-x-2">
                 <p className="text-4xl sm:text-5xl font-mono text-white font-black tracking-widest drop-shadow-lg">
-                  {currentSeconds}<span className="text-base font-normal text-cyan-400 ml-1">초</span>
+                  {currentSeconds}<span className="text-base font-normal text-cyan-400 ml-1">{t.movement.seconds}</span>
                 </p>
                 {totalBrakedSeconds > 0 && (
                   <span className="text-xs font-mono font-bold text-yellow-300 bg-yellow-950/70 border border-yellow-500/40 px-2 py-0.5 rounded-full animate-bounce">
-                    ⚡ -{totalBrakedSeconds}s 회생제동됨
+                    ⚡ -{totalBrakedSeconds}s {t.movement.brakedBadge}
                   </span>
                 )}
               </div>
               <p className="text-xs text-gray-400 font-medium">
-                시공간 궤도를 항해하고 있습니다. (화면 탭 / 연타로 회생제동 가능 ⚡)
+                {t.movement.cruisingHint}
               </p>
             </>
           ) : (
             <div className="flex items-center space-x-2 py-2 text-yellow-300 animate-pulse text-base font-black">
-              <span>✨ 차원 진입 중... 잠시 후 자동 안착합니다.</span>
+              <span>{t.movement.arrivingSoon}</span>
             </div>
           )}
         </div>
@@ -156,11 +149,11 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, 
             <div className="flex items-center space-x-1.5">
               <span className="text-base">⚡</span>
               <span className="text-xs sm:text-sm font-black text-cyan-200 tracking-tight">
-                차원 도약 회생제동 (Regenerative Warp Braking)
+                {t.movement.regenBrakingTitle}
               </span>
             </div>
             <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-950/90 border border-cyan-400/40 text-cyan-300">
-              파동 에너지 흡수 중
+              {t.movement.absorbingEnergy}
             </span>
           </div>
 
@@ -172,15 +165,15 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, 
           >
             <span className="text-base group-hover:scale-125 transition-transform duration-200">⚡</span>
             <span className="text-xs sm:text-sm font-black text-cyan-100 group-hover:text-white">
-              차원 파동 흡수 회생제동 (탭 / 연타)
+              {t.movement.regenBrakingButton}
             </span>
             <span className="text-[10px] text-yellow-300 font-extrabold bg-black/50 px-2 py-0.5 rounded border border-yellow-500/30">
-              -3초 감속
+              {t.movement.regenBrakingSpeed}
             </span>
           </button>
 
           <p className="text-[10px] text-gray-400 text-center leading-relaxed">
-            시공간 마찰 에너지를 역위상 코일로 흡수하여 추진력을 감속하고 타임라인에 조기 안착합니다.
+            {t.movement.regenBrakingDesc}
           </p>
         </div>
 
@@ -190,10 +183,10 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, 
             <span className="text-[10px] font-black uppercase text-cyan-300 tracking-wider flex items-center gap-1.5">
               <span>📡</span>
               <span>
-                {currentSeconds > 45 ? "Phase 1: 차원 좌표 록온" :
-                 currentSeconds > 30 ? "Phase 2: 행운의 아이템 공명" :
-                 currentSeconds > 15 ? "Phase 3: 현지 시공간 이스터에그" :
-                 "Phase 4: 감속 궤도 및 게이트 안착"}
+                {currentSeconds > 45 ? t.movement.phase1 :
+                 currentSeconds > 30 ? t.movement.phase2 :
+                 currentSeconds > 15 ? t.movement.phase3 :
+                 t.movement.phase4}
               </span>
             </span>
             <span className="text-[9px] font-mono text-gray-400">
@@ -203,19 +196,19 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, 
 
           <p className="text-xs sm:text-sm font-bold text-cyan-100 leading-relaxed min-h-[38px] flex items-center">
             {currentSeconds > 45 
-              ? `🌌 [${targetSpot?.worldName || "성소"}]의 시공간 중력장에 진입 중입니다. 엔트로피 역전 현상을 주의하세요.`
+              ? t.movement.phase1Desc(targetSpotInfo?.worldName || t.movement.sanctuaryRift)
               : currentSeconds > 30
-              ? `🎁 이 차원에는 전설의 럭키 아이템 [${targetSpot?.luckyItem || "기적의 조각"}]의 파동이 강하게 감지됩니다.`
+              ? t.movement.phase2Desc(targetSpotInfo?.luckyItem || "Piece of Miracle")
               : currentSeconds > 15
-              ? `💡 조언: "${targetSpot?.locationName}"에 안착 후 산통을 흔들면 최상의 운명이 응답할 것입니다.`
-              : `🎯 차원 게이트 개방 완료! 이제 안전하게 ${targetSpot?.locationName || "목적지"}에 발을 디딥니다...`}
+              ? t.movement.phase3Desc(targetSpotInfo?.locationName || targetDisplay)
+              : t.movement.phase4Desc(targetSpotInfo?.locationName || targetDisplay)}
           </p>
         </div>
 
         {/* 5-Second Periodic Spacetime Calibration Log */}
         <div className="w-full bg-black/60 border border-white/10 rounded-2xl p-3 text-center shadow-inner flex items-center justify-center min-h-[46px] transition-all duration-500">
           <p className="text-xs font-bold text-cyan-200 animate-fade-in tracking-wide leading-relaxed">
-            {SPACETIME_LOGS[logIndex]}
+            {t.movement.spacetimeLogs?.[logIndex % (t.movement.spacetimeLogs?.length || 1)]}
           </p>
         </div>
 
@@ -225,7 +218,7 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, 
             onClick={onArrive}
             className="text-xs text-amber-300 font-bold px-3 py-1.5 rounded-lg bg-amber-950/80 border border-amber-500/50 hover:bg-amber-900 transition"
           >
-            ⚡ [관리자 치트] 즉시 워프 완료
+            {t.movement.adminInstant}
           </button>
         )}
       </div>

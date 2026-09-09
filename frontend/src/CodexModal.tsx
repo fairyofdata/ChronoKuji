@@ -1,6 +1,7 @@
 import React from 'react';
 import { CODEX_ITEMS } from './constants';
 import { CollectedCodexItem } from './types';
+import { useLanguage } from './i18n/LanguageContext';
 
 interface CodexModalProps {
   isOpen: boolean;
@@ -10,6 +11,8 @@ interface CodexModalProps {
 }
 
 export default function CodexModal({ isOpen, onClose, collectedItems = [], isComplete = false }: CodexModalProps) {
+  const { t, getSpotTranslation } = useLanguage();
+
   if (!isOpen) return null;
 
   const collectedNames = new Set(collectedItems.map(item => item.name));
@@ -27,10 +30,10 @@ export default function CodexModal({ isOpen, onClose, collectedItems = [], isCom
             <span className="text-2xl">📖</span>
             <div>
               <h2 className="text-lg font-black text-purple-300 drop-shadow">
-                차원 럭키 아이템 도감 (Dimension Codex)
+                {t.codex.title}
               </h2>
               <p className="text-xs text-gray-400">
-                12대 세계관을 탐험하며 수집한 행운의 보물들
+                {t.codex.subtitle}
               </p>
             </div>
           </div>
@@ -45,8 +48,8 @@ export default function CodexModal({ isOpen, onClose, collectedItems = [], isCom
         {/* Progress Bar & Hidden Spot Status */}
         <div className="p-4 bg-black/40 border-b border-gray-800 flex flex-col space-y-2">
           <div className="flex justify-between items-center text-xs">
-            <span className="text-gray-300 font-bold">수집 진척도</span>
-            <span className="text-amber-400 font-extrabold">{collectedCount} / 11 수집 완료</span>
+            <span className="text-gray-300 font-bold">{t.codex.progress}</span>
+            <span className="text-amber-400 font-extrabold">{t.codex.collectedCount(collectedCount, 11)}</span>
           </div>
           <div className="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden">
             <div 
@@ -57,12 +60,12 @@ export default function CodexModal({ isOpen, onClose, collectedItems = [], isCom
           {isComplete ? (
             <div className="mt-1 p-2 bg-amber-950/60 border border-amber-500/50 rounded-xl text-center">
               <span className="text-xs font-bold text-amber-300 animate-pulse">
-                🌟 축하합니다! 11종 도감 수집 완료로 [12번째 히든 스팟: 인터스텔라 5차원 테서렉트]가 해금되었습니다!
+                {t.codex.hiddenUnlocked}
               </span>
             </div>
           ) : (
             <p className="text-[11px] text-gray-400 text-center">
-              11종의 기본 아이템을 모두 수집하면 미지의 12번째 [히든 스팟]이 시공간에 해금됩니다.
+              {t.codex.hiddenLockedNotice}
             </p>
           )}
         </div>
@@ -72,6 +75,9 @@ export default function CodexModal({ isOpen, onClose, collectedItems = [], isCom
           {CODEX_ITEMS.map((item, index) => {
             const isCollected = collectedNames.has(item.name);
             const orderNum = String(index + 1).padStart(2, '0');
+            const spotInfo = getSpotTranslation(item.spotId);
+            const displayName = isCollected ? spotInfo.luckyItem : t.codex.unknownTreasure;
+
             return (
               <div 
                 key={item.id}
@@ -88,15 +94,15 @@ export default function CodexModal({ isOpen, onClose, collectedItems = [], isCom
                 </div>
                 <div className="w-16 h-16 rounded-xl overflow-hidden mb-2 border border-gray-700 bg-gray-900 flex items-center justify-center">
                   {isCollected ? (
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    <img src={item.image} alt={displayName} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-2xl text-gray-600">❓</span>
                   )}
                 </div>
-                <span className="text-[10px] text-purple-400 font-bold">{item.locationName}</span>
-                <h4 className="text-xs font-extrabold text-white mb-1">{isCollected ? item.name : '미지의 보물'}</h4>
+                <span className="text-[10px] text-purple-400 font-bold">{spotInfo.locationName}</span>
+                <h4 className="text-xs font-extrabold text-white mb-1">{displayName}</h4>
                 <p className="text-[10px] text-gray-400 line-clamp-2 leading-tight">
-                  {isCollected ? item.desc : '점괘를 뽑아 차원 아이템을 수집하세요'}
+                  {isCollected ? item.desc : t.codex.drawToCollect}
                 </p>
               </div>
             );

@@ -17,14 +17,26 @@ load_dotenv()
 
 router = APIRouter(prefix="/api/v1/interpret", tags=["Interpretation"])
 
-def get_openai_client() -> AsyncOpenAI:
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="OPENAI_API_KEY 환경 변수가 서버에 설정되어 있지 않습니다."
-        )
-    return AsyncOpenAI(api_key=api_key)
+def get_ai_client() -> tuple[AsyncOpenAI, str]:
+    """
+    Google Gemini 2.5 Flash(OpenAI-Compatible endpoint) 우선 연동,
+    미설정 시 OpenAI gpt-4o-mini 자동 폴백
+    """
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if gemini_key:
+        return AsyncOpenAI(
+            api_key=gemini_key,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+        ), "gemini-2.5-flash"
+    
+    openai_key = os.getenv("OPENAI_API_KEY")
+    if openai_key:
+        return AsyncOpenAI(api_key=openai_key), "gpt-4o-mini"
+        
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="GEMINI_API_KEY 또는 OPENAI_API_KEY 환경 변수가 서버에 설정되어 있지 않습니다."
+    )
 
 # ---------------------------------------------------------
 # Pydantic Schema: LLM의 출력을 정통 오미쿠지 세부 구조로 강제합니다.
@@ -51,6 +63,11 @@ class LLMInterpretationOutput(BaseModel):
 
 class InterpretRequest(BaseModel):
     user_context: str = Field(..., max_length=500, description="유저의 현재 고민이나 상황")
+    language: Optional[str] = Field("en", description="출력 언어 코드: en, ko, ja (기본값: en)")
+
+class FeedbackRequest(BaseModel):
+    rating: int = Field(..., ge=-1, le=1, description="1 for positive, -1 for negative, 0 for neutral")
+    comment: Optional[str] = Field(None, max_length=500, description="선택적 피드백 사유")
 
 @router.post("/{history_id}", status_code=status.HTTP_200_OK)
 async def interpret_omikuji(
@@ -62,19 +79,18 @@ async def interpret_omikuji(
 ):
     """유저의 고민을 입력받아 LLM 심층 해석을 진행하고, 토큰을 1개 소모합니다."""
     
-    # 1. 유저 인증 상태 검증 (게스트는 AI 해석 불가)
-    if current_user.is_guest and x_admin_bypass != "486":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="AI 심층 풀이는 구글 로그인 후 이용하실 수 있습니다. (20시간마다 1회 무료)"
-        )
-
-    # 2. 유저 토큰 검증 (관리자는 토큰 제한 무시)
+    # 1. 유저 토큰 검증 (관리자는 무제한 통과)
     if current_user.llm_tokens < 1 and x_admin_bypass != "486":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="오늘의 AI 심층 풀이 토큰을 모두 소모하였습니다. (20시간마다 1개 자동 충전)"
-        )
+        if current_user.is_guest:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="AI 심층 풀이 웰컴 토큰을 모두 소모하였습니다. 구글 로그인 시 20시간마다 1회 무료 충전됩니다."
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="오늘의 AI 심층 풀이 토큰을 모두 소모하였습니다. (20시간마다 1개 자동 충전)"
+            )
 
     try:
         history_uuid = uuid.UUID(history_id)
@@ -95,19 +111,28 @@ async def interpret_omikuji(
     system_prompt = spot.theme_metadata.get("system_prompt", "너는 유저의 운세를 재미있게 풀이해주는 점술가야.")
     system_prompt += "\n추가 지침: 너는 정통 오미쿠지의 5대 세부 항목(소원, 연애, 재물, 사업/학업, 차원이동, 기다리는 소식)과 행운의 방위/숫자도 너의 고유 세계관 어조에 완벽히 동화시켜 작성해야 한다. 유저의 고민이 있다면 해당 세부 항목 풀이에도 고민의 맥락을 섬세하게 녹여내라."
 
+    # 다국어 지침 추가 (영어 기본값, 한국어, 일본어)
+    lang_code = (req.language or "en").lower()
+    if lang_code == "ja":
+        system_prompt += "\n【言語指定】重要: すべての出力フィールド(world_concept_title, poem, interpretation, categories, lucky_direction, lucky_item, world_bgm_action)は必ず自然で情緒豊かな【日本語】で作成してください。"
+    elif lang_code == "ko":
+        system_prompt += "\n【언어 지정】중요: 모든 출력 필드는 자연스러운 【한국어】로 작성해야 한다."
+    else:
+        system_prompt += "\n[LANGUAGE INSTRUCTION] CRITICAL: You MUST write ALL output string fields (world_concept_title, poem, interpretation, categories, lucky_direction, lucky_item, world_bgm_action) fluently and naturally in ENGLISH."
+
     categories_ctx = master.meta_info.get("categories", {}) if master.meta_info else {}
-    user_prompt = f"""[원문 점괘 등급]: {master.luck_level}
-[차원 원문]: {master.original_text}
-[기본 세부운]: {categories_ctx}
-[유저의 현재 고민/상황]: {req.user_context}
+    user_prompt = f"""[Fortune Grade]: {master.luck_level}
+[Spacetime Original Text]: {master.original_text}
+[Base Categories]: {categories_ctx}
+[User Context / Question]: {req.user_context}
 
-위 점괘와 유저의 고민을 바탕으로, 너의 세계관 페르소나로 심층 해석과 5대 세부운(wish, love, wealth, work, travel, waiting), 행운의 방위/숫자를 종합 풀이해줘."""
+Please provide a deep, empathetic interpretation and 5 life categories (wish, love, wealth, work, travel, waiting), lucky direction, and lucky number in your world persona."""
 
-    # 4. OpenAI API 호출 (구조화된 출력 강제)
+    # 4. LLM API 호출 (구조화된 출력 강제)
     try:
-        ai_client = get_openai_client()
+        ai_client, model_name = get_ai_client()
         completion = await ai_client.beta.chat.completions.parse(
-            model="gpt-4o-mini", # 비용 최적화를 위해 빠르고 저렴한 4o-mini 사용
+            model=model_name,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
@@ -130,3 +155,40 @@ async def interpret_omikuji(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM 처리 중 오류 발생: {str(e)}")
+
+@router.post("/{history_id}/feedback", status_code=status.HTTP_200_OK)
+async def submit_feedback(
+    history_id: str,
+    req: FeedbackRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    LLM 응답 평가 및 RLHF / 파인튜닝용 사용자 피드백을 수집합니다.
+    """
+    try:
+        history_uuid = uuid.UUID(history_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="잘못된 History ID 형식입니다.")
+
+    result = await db.execute(
+        select(OmikujiHistory).where(
+            OmikujiHistory.id == history_uuid, 
+            OmikujiHistory.user_id == current_user.id
+        )
+    )
+    history = result.scalars().first()
+    if not history:
+        raise HTTPException(status_code=404, detail="해당 점괘 기록을 찾을 수 없습니다.")
+
+    history.feedback_rating = req.rating
+    history.feedback_text = req.comment
+    db.add(history)
+    await db.commit()
+
+    return {
+        "status": "success",
+        "message": "피드백이 안전하게 기록되었습니다. 향후 프롬프트 및 인과율 모델 개선에 반영됩니다.",
+        "history_id": str(history.id),
+        "feedback_rating": req.rating
+    }

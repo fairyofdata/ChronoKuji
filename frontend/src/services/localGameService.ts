@@ -1,6 +1,7 @@
-import { UserState, OmikujiResult, FateHistoryItem, LlmInterpretationResult, CollectedCodexItem } from '../types';
+import { UserState, OmikujiResult, FateHistoryItem, LlmInterpretationResult, CollectedCodexItem, ObservatoryStats } from '../types';
 import { SPOTS, CODEX_ITEMS } from '../constants';
 import { WORLD_OMIKUJI_LORE } from '../omikujiLore';
+import { API_BASE_URL } from '../config';
 
 const USER_STATE_KEY = 'chronokuji_user_state';
 const HISTORY_KEY = 'chronokuji_fate_history';
@@ -206,20 +207,40 @@ export class LocalGameService {
   }
 
   /**
-   * AI 운세 해석 (오프라인 룰베이스 감성 해석)
+   * AI 운세 해석 (오프라인 룰베이스 감성 해석 - EN 기본값, KO, JA 다국어 지원)
    */
-  static async interpretOmikuji(historyId: number, userContext?: string): Promise<LlmInterpretationResult> {
+  static async interpretOmikuji(historyId: number, userContext?: string, lang: string = 'en'): Promise<LlmInterpretationResult> {
     const history = this.getHistory();
     const item = history.find(h => h.history_id === historyId);
     const spot = SPOTS.find(s => s.id === item?.spot_id);
-    const worldName = spot?.worldName || '시공간';
+    const worldName = spot?.worldName || 'Spacetime';
 
-    // 감성적 오프라인 AI 템플릿 해석
-    const interpretation = `[${worldName}의 운명 해석]
+    let interpretation = '';
+    let worldTitle = '';
+
+    if (lang === 'ja') {
+      interpretation = `[${worldName}の運命鑑定]
+あなたの引いた御神籤は「${item?.luck_level || '吉'}」です。
+${item?.meta_info?.poem ? `"${item.meta_info.poem}"\n\n` : ''}
+${userContext ? `あなたのお悩み（"${userContext}"）を見つめると、` : ''}${worldName}の世界線では、焦らずに大いなる時の流れに身を委ねることで、最も強靭な運命の波動が目覚めると告げています。
+迷わず一歩を踏み出してください。時空の因果律があなたの道を照らしています。`;
+      worldTitle = `${worldName} 時空因果律鑑定`;
+    } else if (lang === 'ko') {
+      interpretation = `[${worldName}의 운명 해석]
 당신이 뽑은 점괘는 "${item?.luck_level || '吉'}"입니다.
 ${item?.meta_info?.poem ? `"${item.meta_info.poem}"\n\n` : ''}
 ${userContext ? `당신의 질문("${userContext}")에 비추어 볼 때, ` : ''}${worldName}의 세계선에서는 지금 조급해하지 않고 흐름에 몸을 맡길 때 가장 강력한 운의 파동이 솟아난다고 전합니다.
 주저하지 말고 첫 발을 내딛으세요. 시공의 인과율이 당신의 앞길을 밝히고 있습니다.`;
+      worldTitle = `${worldName} 시공간 인과율 해석`;
+    } else {
+      // Default: English
+      interpretation = `[${worldName} Spacetime Counsel]
+Your drawn fortune grade is "${item?.luck_level || '吉'}".
+${item?.meta_info?.poem ? `"${item.meta_info.poem}"\n\n` : ''}
+${userContext ? `Reflecting upon your question ("${userContext}"), ` : ''}the timeline of ${worldName} whispers that trusting the rhythm of time rather than rushing will unlock your most potent resonance.
+Do not hesitate to take that first courageous step. The causal fabric of the multiverse is aligning in your favor.`;
+      worldTitle = `${worldName} Causal Interpretation`;
+    }
 
     // 히스토리에 해석 저장
     if (item) {
@@ -230,8 +251,108 @@ ${userContext ? `당신의 질문("${userContext}")에 비추어 볼 때, ` : ''
 
     return {
       interpretation,
-      world_concept_title: `${worldName} 시공간 인과율 해석`,
+      world_concept_title: worldTitle,
       world_bgm_action: spot?.bgm
+    };
+  }
+
+  /**
+   * LLM 응답 피드백 저장 (로컬 저장 + 백엔드 비동기 동기화)
+   */
+  static async saveFeedback(historyId: number, rating: number, comment?: string): Promise<void> {
+    const history = this.getHistory();
+    const item = history.find(h => h.history_id === historyId);
+    if (item) {
+      item.feedback_rating = rating;
+      item.feedback_text = comment || null;
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    }
+
+    // 백엔드 API 연동 시도 (실패해도 무방)
+    try {
+      const state = this.getUserState();
+      await fetch(`${API_BASE_URL}/api/v1/interpret/${historyId}/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': state.user_id
+        },
+        body: JSON.stringify({ rating, comment: comment || null })
+      });
+    } catch {
+      // 오프라인이거나 서버 미가동 시에도 로컬에 안전하게 보존
+    }
+  }
+
+  /**
+   * 차원 관측소 데이터 통계 조회 (서버 우선, 오프라인 시 로컬 데이터 기반 실시간 집계)
+   */
+  static async getObservatoryStats(): Promise<ObservatoryStats> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/stats/summary`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'success' && data.observatory) {
+          return data.observatory;
+        }
+      }
+    } catch {
+      // 서버 접근 불가 시 아래의 클라이언트 로컬 집계 파이프라인 작동
+    }
+
+    // 클라이언트 로컬 스토리지 기반 실시간 분석 파이프라인 (Client-side Data Aggregation)
+    const history = this.getHistory();
+    const totalFortunes = history.length;
+    const totalAi = history.filter(h => !!h.llm_interpretation).length;
+
+    // 7대 등급 분포 집계
+    const counts: Record<string, number> = {
+      "大吉": 0, "中吉": 0, "小吉": 0, "吉": 0, "末吉": 0, "凶": 0, "大凶": 0
+    };
+    history.forEach(h => {
+      if (counts[h.luck_level] !== undefined) {
+        counts[h.luck_level]++;
+      }
+    });
+
+    const luck_distribution = LUCK_LEVELS.map(lvl => ({
+      level: lvl,
+      count: counts[lvl] || 0,
+      percentage: totalFortunes > 0 ? Math.round(((counts[lvl] || 0) / totalFortunes) * 1000) / 10 : 0
+    }));
+
+    // 스팟별 탐험 분포 집계
+    const spotCounts: Record<number, number> = {};
+    history.forEach(h => {
+      if (h.spot_id !== null) {
+        spotCounts[h.spot_id] = (spotCounts[h.spot_id] || 0) + 1;
+      }
+    });
+
+    const spot_distribution = SPOTS.map(s => ({
+      spot_id: s.id,
+      name: s.locationName || s.name,
+      visits: spotCounts[s.id] || 0
+    })).sort((a, b) => b.visits - a.visits);
+
+    // 피드백 집계
+    const rated = history.filter(h => h.feedback_rating !== undefined && h.feedback_rating !== null);
+    const positive = rated.filter(h => h.feedback_rating === 1).length;
+    const negative = rated.filter(h => h.feedback_rating === -1).length;
+    const satisfaction_rate = rated.length > 0 ? Math.round((positive / rated.length) * 1000) / 10 : 100.0;
+
+    return {
+      total_travelers: 1,
+      total_fortunes_drawn: totalFortunes,
+      total_ai_interpretations: totalAi,
+      feedback: {
+        total_rated: rated.length,
+        positive,
+        negative,
+        satisfaction_rate
+      },
+      luck_distribution,
+      spot_distribution
     };
   }
 }

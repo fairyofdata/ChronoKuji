@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SPOTS } from './constants';
 import { AudioEngine } from './audioEngine';
+import { useLanguage } from './i18n/LanguageContext';
 
 interface FortuneShakeModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface FortuneShakeModalProps {
 }
 
 export default function FortuneShakeModal({ isOpen, spotId, onComplete }: FortuneShakeModalProps) {
+  const { t, getSpotTranslation, language } = useLanguage();
   const [shakeCount, setShakeCount] = useState<number>(0);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [isStickEjecting, setIsStickEjecting] = useState<boolean>(false);
@@ -17,6 +19,7 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
   const targetShakes = 4;
 
   const spot = SPOTS.find(s => s.id === spotId);
+  const spotInfo = spot ? getSpotTranslation(spot.id) : null;
 
   useEffect(() => {
     if (isOpen) {
@@ -79,7 +82,7 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
         <div className="flex items-center space-x-2">
           <span className="animate-spin text-amber-400 text-sm">✦</span>
           <span className="text-[11px] font-black text-purple-300 tracking-widest uppercase">
-            {spot?.worldName || "Multiverse"} • 運命の筒
+            {spotInfo?.worldName || spot?.worldName || "Multiverse"} • 運命の筒
           </span>
           <span className="animate-spin text-amber-400 text-sm">✦</span>
         </div>
@@ -87,10 +90,16 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
         {/* Title */}
         <div>
           <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-purple-200 drop-shadow">
-            운명의 산통 흔들기
+            {t.omikuji.shakePrompt}
           </h3>
           <p className="text-xs text-gray-400 mt-1">
-            산통을 <span className="text-amber-300 font-bold">{targetShakes}번</span> 탭하여 점괘 막대를 뽑아내세요!
+            {language === 'en' ? (
+              <>Tap the sacred cylinder <span className="text-amber-300 font-bold">{targetShakes} times</span> to draw your stick!</>
+            ) : language === 'ja' ? (
+              <>筒を<span className="text-amber-300 font-bold">{targetShakes}回</span>タップしておみくじ棒を振り出しましょう！</>
+            ) : (
+              <>산통을 <span className="text-amber-300 font-bold">{targetShakes}번</span> 탭하여 점괘 막대를 뽑아내세요!</>
+            )}
           </p>
         </div>
 
@@ -138,7 +147,9 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
                     ? 'bg-amber-400 text-black scale-105' 
                     : 'bg-black/60 border border-purple-500/40 text-amber-300 animate-pulse'
                 }`}>
-                  {isStickEjecting ? "🎉 점괘 막대 돌출!" : "👉 산통을 터치하세요!"}
+                  {isStickEjecting 
+                    ? (language === 'en' ? "🎉 Fortune Stick Drawn!" : language === 'ja' ? "🎉 おみくじ棒が出ました！" : "🎉 점괘 막대 돌출!") 
+                    : t.omikuji.tapToShake}
                 </span>
               </div>
             </div>
@@ -147,7 +158,7 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
             <div className="w-52 h-64 bg-[#fbf8ee] text-gray-950 rounded-2xl shadow-2xl border-2 border-amber-300 p-4 flex flex-col items-center justify-between animate-unfold relative overflow-hidden font-serif">
               <div className="border-b border-gray-300 pb-1.5 w-full text-center">
                 <span className="text-[9px] font-mono text-gray-500 block">CHRONO • 第{fortuneNumber}番</span>
-                <span className="text-xs font-bold text-gray-800">{spot?.worldName} 御神籤</span>
+                <span className="text-xs font-bold text-gray-800">{spotInfo?.worldName || spot?.worldName} 御神籤</span>
               </div>
 
               <div className="py-2">
@@ -158,7 +169,7 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
               </div>
 
               <p className="text-[10px] text-gray-600 text-center font-sans font-bold">
-                운명이 인쇄되었습니다 ✨
+                {language === 'en' ? "Fate revealed ✨" : language === 'ja' ? "運命が刻まれました ✨" : "운명이 인쇄되었습니다 ✨"}
               </p>
             </div>
           )}
@@ -183,7 +194,7 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
         </div>
 
         <p className="text-xs text-gray-400 font-mono tracking-wider">
-          {shakeCount} / {targetShakes} 흔듦 {shakeCount >= targetShakes && "— 운명 확정"}
+          {shakeCount} / {targetShakes} {language === 'en' ? 'shakes' : language === 'ja' ? '回' : '흔듦'} {shakeCount >= targetShakes && (language === 'en' ? "— Fate Sealed" : language === 'ja' ? "— 運命確定" : "— 운명 확정")}
         </p>
       </div>
     </div>

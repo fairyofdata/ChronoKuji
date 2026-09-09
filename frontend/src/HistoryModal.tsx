@@ -4,6 +4,7 @@ import { AudioEngine } from './audioEngine';
 import { FateHistoryItem } from './types';
 import { API_BASE_URL } from './config';
 import { LocalGameService } from './services/localGameService';
+import { useLanguage } from './i18n/LanguageContext';
 
 interface HistoryModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface HistoryModalProps {
 }
 
 export default function HistoryModal({ isOpen, onClose, userId, currentSpotId }: HistoryModalProps) {
+  const { t, getSpotTranslation, language } = useLanguage();
   const [histories, setHistories] = useState<FateHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -60,6 +62,8 @@ export default function HistoryModal({ isOpen, onClose, userId, currentSpotId }:
 
   if (!isOpen) return null;
 
+  const localeCode = language === 'en' ? 'en-US' : language === 'ja' ? 'ja-JP' : 'ko-KR';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
       <div 
@@ -72,10 +76,10 @@ export default function HistoryModal({ isOpen, onClose, userId, currentSpotId }:
             <span className="text-2xl">📜</span>
             <div>
               <h2 className="text-lg font-black text-purple-300 drop-shadow">
-                차원 점괘 기록보관소 (Fate Archive)
+                {t.history.title}
               </h2>
               <p className="text-xs text-gray-400">
-                시공간을 여행하며 마주했던 과거의 모든 운명과 AI 해석
+                {t.history.subtitle}
               </p>
             </div>
           </div>
@@ -91,23 +95,24 @@ export default function HistoryModal({ isOpen, onClose, userId, currentSpotId }:
         <div className="p-5 overflow-y-auto space-y-4">
           {isLoading ? (
             <div className="py-12 text-center text-gray-400 animate-pulse text-sm">
-              ✨ 기록보관소의 양피지를 펼치는 중입니다...
+              {t.history.loading}
             </div>
           ) : histories.length === 0 ? (
             <div className="py-12 text-center text-gray-400 space-y-2">
               <span className="text-3xl block">📭</span>
-              <p className="text-sm">아직 기록된 점괘가 없습니다.</p>
-              <p className="text-xs text-gray-500">다른 세계관으로 이동하여 첫 점괘를 뽑아보세요!</p>
+              <p className="text-sm">{t.history.emptyTitle}</p>
+              <p className="text-xs text-gray-500">{t.history.emptyDesc}</p>
             </div>
           ) : (
             histories.map((item) => {
               const spot = SPOTS.find(s => s.id === item.spot_id);
+              const spotInfo = spot ? getSpotTranslation(spot.id) : null;
               const dateStr = item.drawn_at 
-                ? new Date(item.drawn_at).toLocaleString('ko-KR', { 
+                ? new Date(item.drawn_at).toLocaleString(localeCode, { 
                     year: 'numeric', month: 'short', day: 'numeric', 
                     hour: '2-digit', minute: '2-digit' 
                   }) 
-                : "시간 불명";
+                : "Unknown";
 
               return (
                 <div 
@@ -117,7 +122,7 @@ export default function HistoryModal({ isOpen, onClose, userId, currentSpotId }:
                   <div className="flex justify-between items-center border-b border-gray-700/40 pb-2">
                     <div className="flex items-center space-x-2">
                       <span className="text-xs font-bold text-purple-300">
-                        {spot ? spot.name : "차원의 틈새"}
+                        {spotInfo ? `${spotInfo.locationName} (${spotInfo.worldName})` : (spot ? spot.name : "Sanctuary Rift")}
                       </span>
                       <span className="text-[10px] bg-purple-950 px-2 py-0.5 rounded border border-purple-500/30 text-purple-200 font-bold">
                         {item.luck_level}
@@ -134,14 +139,14 @@ export default function HistoryModal({ isOpen, onClose, userId, currentSpotId }:
 
                   {item.user_context && (
                     <div className="text-xs text-gray-300 bg-gray-900/60 p-2.5 rounded-xl border border-gray-800">
-                      <span className="text-[10px] text-purple-400 font-bold block mb-0.5">💭 나의 고민</span>
+                      <span className="text-[10px] text-purple-400 font-bold block mb-0.5">💭 {t.history.myQuestion}</span>
                       {item.user_context}
                     </div>
                   )}
 
                   {item.llm_interpretation && (
                     <div className="text-xs text-gray-200 bg-purple-950/40 p-2.5 rounded-xl border border-purple-500/30">
-                      <span className="text-[10px] text-amber-400 font-bold block mb-0.5">✨ AI 심층 해석</span>
+                      <span className="text-[10px] text-amber-400 font-bold block mb-0.5">✨ {t.history.aiInterpretation}</span>
                       <p className="whitespace-pre-line leading-relaxed">{item.llm_interpretation}</p>
                     </div>
                   )}

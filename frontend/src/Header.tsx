@@ -4,6 +4,7 @@ import { SPOTS } from './constants';
 import { AudioEngine } from './audioEngine';
 import { useToast } from './Toast';
 import { API_BASE_URL } from './config';
+import { useLanguage } from './i18n/LanguageContext';
 
 interface HeaderProps {
   userState: UserState | null;
@@ -12,6 +13,7 @@ interface HeaderProps {
   tokenTimeLeft: number;
   onOpenCodex: () => void;
   onOpenHistory: () => void;
+  onOpenStats?: () => void;
   codexCount: number;
   isCodexComplete: boolean;
   isZenMode: boolean;
@@ -30,6 +32,7 @@ export default function Header({
   tokenTimeLeft,
   onOpenCodex,
   onOpenHistory,
+  onOpenStats,
   codexCount = 0,
   isCodexComplete = false,
   isZenMode = false,
@@ -40,6 +43,7 @@ export default function Header({
   onReturnToRift,
   onAdminTeleport
 }: HeaderProps) {
+  const { language, setLanguage, t } = useLanguage();
   const [isAudioMuted, setIsAudioMuted] = useState(AudioEngine.isMuted());
   const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState(false);
   const [adminPasscode, setAdminPasscode] = useState('');
@@ -90,9 +94,9 @@ export default function Header({
   const handleRestrictedClick = (featureName: string) => {
     showToast({
       type: 'shrine',
-      title: `🔒 ${featureName} 열람 제한`,
-      message: `${featureName}은 시공간의 성소인 '차원의 균열'에서만 열람할 수 있습니다.`,
-      actionText: onReturnToRift ? '성소로 귀환하기' : undefined,
+      title: `🔒 ${featureName} - ${t.header.restrictedTitle}`,
+      message: t.header.restrictedMsg,
+      actionText: onReturnToRift ? t.header.returnSanctuary : undefined,
       onAction: onReturnToRift
     });
   };
@@ -143,13 +147,54 @@ export default function Header({
                 ChronoKuji
               </h1>
               <p className="text-[10px] sm:text-xs text-purple-300 font-medium tracking-wide">
-                시공간을 넘나드는 멀티버스 AI 오미쿠지
+                {language === 'en'
+                  ? 'Multiverse Spacetime AI Omikuji'
+                  : language === 'ja'
+                  ? '時空を超えるマルチバースAI御神籤'
+                  : '시공간을 넘나드는 멀티버스 AI 오미쿠지'}
               </p>
             </div>
           </div>
 
           {/* Status Bar & Controls */}
           <div className="flex items-center flex-wrap gap-2">
+            {/* Global Language Selector (Default: EN) */}
+            <div className="flex items-center bg-black/60 border border-purple-500/30 rounded-xl p-0.5 text-[10px] sm:text-xs font-bold shadow-inner backdrop-blur-md">
+              <button
+                onClick={() => setLanguage('en')}
+                className={`px-2 py-1 rounded-lg transition ${
+                  language === 'en'
+                    ? 'bg-purple-600 text-white shadow-sm font-black'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+                title="English (Default)"
+              >
+                EN
+              </button>
+              <button
+                onClick={() => setLanguage('ko')}
+                className={`px-2 py-1 rounded-lg transition ${
+                  language === 'ko'
+                    ? 'bg-purple-600 text-white shadow-sm font-black'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+                title="한국어"
+              >
+                한국어
+              </button>
+              <button
+                onClick={() => setLanguage('ja')}
+                className={`px-2 py-1 rounded-lg transition ${
+                  language === 'ja'
+                    ? 'bg-purple-600 text-white shadow-sm font-black'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+                title="日本語"
+              >
+                日本語
+              </button>
+            </div>
+
             {/* Zen View Mode Toggle */}
             <button
               onClick={() => setIsZenMode && setIsZenMode(prev => !prev)}
@@ -158,23 +203,23 @@ export default function Header({
                   ? 'bg-amber-500/30 border-amber-400 text-amber-300 animate-pulse' 
                   : 'bg-black/40 hover:bg-black/60 border-white/10 text-gray-300 hover:text-white'
               }`}
-              title="UI를 숨기고 고화질 아트워크와 BGM만 감상합니다"
+              title={isZenMode ? "Exit Zen Mode" : "Hide UI and immerse in artwork & music"}
             >
               <span>🖼️</span>
-              <span>{isZenMode ? "UI 복귀" : "감상 모드"}</span>
+              <span>{isZenMode ? "UI Exit" : t.header.zenMode}</span>
             </button>
 
             {/* Daily Streak Badge */}
             <div className="flex items-center space-x-1 bg-amber-950/60 border border-amber-500/40 px-2.5 py-1.5 rounded-xl text-xs font-bold text-amber-300 shadow">
               <span>🔥</span>
-              <span>{streakDays}일 연속 접속</span>
+              <span>{streakDays} {t.header.streak}</span>
             </div>
 
             {/* Codex Button */}
             <button 
               onClick={() => {
                 if (userState?.current_spot_id) {
-                  handleRestrictedClick("차원 럭키 아이템 도감");
+                  handleRestrictedClick(t.header.codex);
                 } else {
                   onOpenCodex();
                 }
@@ -186,10 +231,10 @@ export default function Header({
                     ? 'bg-black/30 border-white/5 text-gray-500 hover:text-gray-400' 
                     : 'bg-black/50 hover:bg-black/70 border-purple-500/50 text-purple-300 shadow-purple-500/20 shadow'
               }`}
-              title={userState?.current_spot_id ? "차원의 균열에서만 열람 가능" : "차원 럭키 아이템 도감"}
+              title={userState?.current_spot_id ? t.header.restrictedMsg : t.header.codex}
             >
               <span>{userState?.current_spot_id ? "🔒" : "📖"}</span>
-              <span>도감</span>
+              <span>{t.header.codex}</span>
               <span className="text-amber-400 font-black">({codexCount}/11)</span>
             </button>
 
@@ -198,7 +243,7 @@ export default function Header({
               <button
                 onClick={() => {
                   if (userState?.current_spot_id) {
-                    handleRestrictedClick("차원 운명 기록보관소");
+                    handleRestrictedClick(t.header.history);
                   } else {
                     onOpenHistory();
                   }
@@ -208,10 +253,22 @@ export default function Header({
                     ? 'bg-black/30 border-white/5 text-gray-500 hover:text-gray-400' 
                     : 'bg-black/50 hover:bg-black/70 border-cyan-500/50 text-cyan-300 shadow-cyan-500/20 shadow'
                 }`}
-                title={userState?.current_spot_id ? "차원의 균열에서만 열람 가능" : "과거 점괘 및 AI 해석 기록 조회"}
+                title={userState?.current_spot_id ? t.header.restrictedMsg : t.header.history}
               >
                 <span>{userState?.current_spot_id ? "🔒" : "📜"}</span>
-                <span>기록</span>
+                <span>{t.header.history}</span>
+              </button>
+            )}
+
+            {/* Multiverse Observatory Stats Button */}
+            {onOpenStats && (
+              <button
+                onClick={onOpenStats}
+                className="flex items-center space-x-1 border px-3 py-1.5 rounded-xl text-xs font-bold transition backdrop-blur-md shadow-sm bg-black/50 hover:bg-black/70 border-indigo-500/50 text-indigo-300 shadow-indigo-500/20 shadow"
+                title={t.header.stats}
+              >
+                <span>📊</span>
+                <span>{t.header.stats}</span>
               </button>
             )}
 
@@ -222,7 +279,7 @@ export default function Header({
                 setIsAudioMuted(muted);
               }}
               className="flex items-center space-x-1 bg-black/40 hover:bg-black/60 border border-white/10 px-2.5 py-1.5 rounded-xl text-xs transition backdrop-blur-md shadow-sm"
-              title="배경음악 ON/OFF"
+              title={isAudioMuted ? t.header.soundOff : t.header.soundOn}
             >
               <span>{isAudioMuted ? "🔇" : "🔊"}</span>
             </button>
@@ -233,7 +290,7 @@ export default function Header({
                 onClick={onGoogleLogin}
                 disabled={isLoggingIn}
                 className="flex items-center space-x-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-md shadow-purple-500/20 active:scale-95 disabled:opacity-50"
-                title="구글 로그인하고 20시간마다 1회 무료 AI 심층 풀이를 받으세요"
+                title={t.header.login}
               >
                 {/* Google G Icon */}
                 <svg className="w-3.5 h-3.5 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
@@ -242,7 +299,7 @@ export default function Header({
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                 </svg>
-                <span>{isLoggingIn ? "로그인 중..." : "Google 로그인"}</span>
+                <span>{isLoggingIn ? t.header.loggingIn : t.header.login}</span>
               </button>
             ) : (
               <div className="flex items-center space-x-2 bg-purple-950/40 border border-purple-500/40 px-2.5 py-1 rounded-xl text-xs backdrop-blur-md">

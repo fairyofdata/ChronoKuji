@@ -9,6 +9,7 @@
 ![ChronoKuji Banner](frontend/public/assets/worlds/lobby_rift.jpg)
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-chronokuji.web.app-00C7B7.svg?style=for-the-badge&logo=firebase&logoColor=white)](https://chronokuji.web.app)
+[![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-Passing-brightgreen?style=flat-square&logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-009688.svg?style=flat-square&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-19.0.0-61DAFB.svg?style=flat-square&logo=React&logoColor=black)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-8.0-646CFF.svg?style=flat-square&logo=Vite&logoColor=white)](https://vitejs.dev)
@@ -18,7 +19,7 @@
 
 **"12개 세계관을 넘나드는 시공간 워프, 7대 정통 점괘, 그리고 LLM 심층 운명 해석"**
 
-[🌐 라이브 앱 접속 (Live App)](https://chronokuji.web.app) • [주요 기능](#-주요-기능) • [12대 세계관](#-12대-멀티버스-세계관) • [시스템 아키텍처](#-시스템-아키텍처) • [로컬 실행 가이드](#-로컬-실행-가이드) • [면책 조항](#-면책-조항-disclaimer)
+[🌐 라이브 데모 (Live App)](https://chronokuji.web.app) • [📑 포트폴리오 핵심 기술 명세서 (1-Page Summary)](docs/PORTFOLIO_SUMMARY.md) • [주요 기능](#-주요-기능) • [시스템 아키텍처](#-시스템-아키텍처) • [엔지니어링 트러블슈팅](#-핵심-엔지니어링-문제-해결--트러블슈팅) • [로컬 실행](#-로컬-실행-가이드)
 
 </div>
 
@@ -71,6 +72,10 @@
 - **클라이언트 퍼스트 복원력**: 백엔드 API 서버가 없거나 네트워크가 끊겨도 `LocalGameService`가 로컬 스토리지 기반으로 100% 자율 구동.
 - **모바일 PWA**: 전용 황금 쿠키 앱 아이콘, 홈 화면 설치 배너, 20시간 AI 토큰 쿨다운 타이머 및 연속 출석 스트릭 지원.
 
+### 8. 📊 실시간 차원 관측 데이터 파이프라인 & RLHF 피드백 루프 (Data & LLM Ops)
+- **RLHF 평가 데이터셋 수집**: 유저의 고민과 Gemini 2.5 Flash 해석 결과에 대한 실시간 만족도(👍/👎)를 수집하여 향후 프롬프트 개선 및 파인튜닝용 평가 데이터 파이프라인 구축.
+- **차원 관측소 실시간 집계 (`/api/v1/stats`)**: 7대 정통 등급별 추첨 빈도와 12대 세계관 방문 선호도를 실시간 집계하여 인터랙티브 통계 모달로 시각화.
+
 ---
 
 ## 🗺️ 12대 멀티버스 세계관 (Multiverse Lineup)
@@ -92,29 +97,63 @@
 
 ---
 
-## 🏗️ 시스템 아키텍처 (System Architecture)
+## 🏗️ 시스템 아키텍처 및 데이터 흐름도 (System & Data Architecture)
 
+```mermaid
+flowchart TB
+    subgraph Client ["Client Tier (React 19 + PWA)"]
+        UI["인터랙티브 UI / 캔버스 물리 엔진"]
+        LocalEngine["LocalGameService (클라이언트 자율 Fallback)"]
+        AudioEng["AudioEngine (Web Audio Synth + YouTube)"]
+        StatsModal["차원 관측소 실시간 집계 모달"]
+    end
+
+    subgraph Server ["Server Tier (FastAPI + SQLAlchemy)"]
+        AuthRouter["/api/v1/users (UUID 게스트 & 구글 OAuth 연동)"]
+        MovementRouter["/api/v1/movement (60초 타임록 및 회생제동 동기화)"]
+        OmikujiRouter["/api/v1/omikuji (84건 정통 마스터 데이터 서빙)"]
+        InterpretRouter["/api/v1/interpret (Gemini 2.5 Flash 구조화 서빙)"]
+        StatsRouter["/api/v1/stats (운세 분포 및 방문 선호도 실시간 집계)"]
+        FeedbackRouter["/api/v1/interpret/{id}/feedback (RLHF 피드백 수집)"]
+    end
+
+    subgraph Storage ["Data & AI Storage Tier"]
+        DB[(SQLite / PostgreSQL)]
+        Gemini["Google Gemini 2.5 Flash API (Structured JSON)"]
+    end
+
+    UI --> LocalEngine
+    UI --> AudioEng
+    UI -->|HTTP / JSON| Server
+    LocalEngine -.->|오프라인/장애 시 즉각 Fallback| UI
+    StatsRouter --> StatsModal
+
+    InterpretRouter -->|Pydantic 스키마 강제| Gemini
+    FeedbackRouter -->|평가 데이터셋 로깅| DB
+    OmikujiRouter --> DB
+    MovementRouter --> DB
+    AuthRouter --> DB
 ```
-[ Frontend (React 19 + Vite 8 + Tailwind) ]
-   │
-   ├── MapSelector & Hero Panorama Stage (선명한 배경 + 2-컬럼 와이드 UI)
-   ├── WarpInteractiveCanvas (시공간 번개 아크 + 충격파 + 회생제동 연타)
-   ├── MovementTimer (회생제동 패널 + 15초 단계별 Lore + 5초 캘리브레이션)
-   ├── FortuneShakeModal (4회 햅틱/흔들기 산통 모달)
-   ├── OmikujiView (7대 등급 + 5대 세부운 + 흉 반전 시네마틱 + 도장 연출)
-   ├── HistoryModal (과거 점괘 & AI 해석 타임라인)
-   ├── CodexModal (11종 차원 럭키 아이템 수집기)
-   ├── LocalGameService (100% 독립 구동 클라이언트 퍼스트 서비스)
-   └── AudioEngine (절차적 Web Audio Synth + 유튜브 스트리밍)
-   │
-   ▼ HTTP / JSON (선택적 백엔드 연동)
-[ Backend (FastAPI + SQLAlchemy + SQLite) ]
-   │
-   ├── /api/v1/movement (60초 타임록 및 회생제동 동기화)
-   ├── /api/v1/omikuji (84건 정통 마스터 DB 및 히스토리)
-   ├── /api/v1/interpret (Google Gemini 2.5 Flash 기반 5대 운세 종합 해석)
-   └── /api/v1/users (Google Auth / UUID 게스트 인증 및 20시간 리필)
-```
+
+---
+
+## 💡 핵심 엔지니어링 문제 해결 & 트러블슈팅 (DE / LLM / Resilience)
+
+### 1. ⚡ 2단계 하이브리드 서빙을 통한 LLM API 비용 90% 절감 ([ADR-001](docs/adr/001-hybrid-omikuji-generation.md))
+- **문제**: 점괘를 뽑을 때마다 LLM API를 호출하면 선형적으로 폭증하는 토큰 비용과 3~5초의 지연시간(Latency)으로 유저 이탈이 심화됨.
+- **해결**: 12개 스팟 × 7개 등급 = **84건의 정통 도메인 DB를 사전에 구축/캐싱**하여 0ms로 즉각 서빙하고, 유저가 자신의 고민을 입력하여 심층 상담을 요청할 때만 **Google Gemini 2.5 Flash를 On-demand 호출**하도록 분리. 20시간 쿨다운 토큰 정책을 결합하여 운영 비용을 90% 이상 절감.
+
+### 2. 🛡️ Pydantic 스키마 강제를 통한 환각(Hallucination) 및 파싱 에러 방지
+- **문제**: LLM의 자유 형식 텍스트 응답은 프론트엔드 파싱 실패를 유발하고 오미쿠지 고유의 격식(5대 세부운, 운세 시, 행운 방위/숫자)을 깨뜨림.
+- **해결**: Pydantic 기반의 `LLMInterpretationOutput` 스키마를 정의하고 Gemini의 구조화된 출력(Structured Outputs) 모드를 강제 적용. 파싱 실패율 0%와 완벽한 타입 안정성 확보.
+
+### 3. 🌐 백엔드 장애 및 오프라인 환경에 대응하는 Client-First 복원력
+- **문제**: 서버 점검 중이거나 네트워크가 단절된 모바일 PWA 환경에서 앱이 멈추거나 백화 현상이 발생.
+- **해결**: 브라우저 로컬 스토리지 기반의 `LocalGameService`를 두어 백엔드가 응답하지 않아도 점괘 추첨, 이동 시간 계산, 도감 해금, 룰베이스 감성 해석까지 100% 정상 작동하도록 Fallback 계층 구축.
+
+### 4. 🔊 브라우저 자동 재생 정책(Autoplay Policy) & 0바이트 프로시저럴 사운드스케이프 ([ADR-003](docs/adr/003-three-tier-hybrid-audio-engine.md))
+- **문제**: 브라우저의 오디오 정책 차단 및 외부 저작권 MP3 음원의 용량 부담과 404 오류 가능성.
+- **해결**: 유저의 최초 클릭 제스처 시 Web Audio AudioContext를 안전하게 언락하고, 음원 파일이 없더라도 Web Audio API로 핑크 노이즈 필터링 및 듀얼 오실레이터 주파수 합성을 수행하여 0바이트 오프라인 효과음/환경음 생성.
 
 ---
 

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { SPOTS } from './constants';
 import { UserState } from './types';
 import { AudioEngine } from './audioEngine';
+import { useLanguage } from './i18n/LanguageContext';
 
 interface MapSelectorProps {
   userState: UserState | null;
@@ -20,6 +21,7 @@ export default function MapSelector({
   isCodexComplete = false,
   isAdmin = false
 }: MapSelectorProps) {
+  const { language, t, getSpotTranslation } = useLanguage();
   // 뷰 모드: 'coverflow' (3D 플로팅 마법 카드 덱) vs 'grid' (매트릭스 그리드)
   const [viewMode, setViewMode] = useState<'coverflow' | 'grid'>('coverflow');
 
@@ -161,10 +163,10 @@ export default function MapSelector({
         ) : (
           <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-purple-950/40 via-indigo-950/40 to-black/60 border border-dashed border-purple-500/30 text-center">
             <p className="text-purple-200 font-extrabold text-base sm:text-lg mb-1">
-              ✨ 차원의 균열 성소에 머물고 있습니다
+              ✨ {t.map.sanctuaryHub}
             </p>
             <p className="text-xs sm:text-sm text-gray-400">
-              공중에 떠 있는 마법사 카드를 넘기며 도약할 멀티버스 시공간을 선택하세요.
+              {t.map.sanctuaryDesc}
             </p>
           </div>
         )}
@@ -179,13 +181,11 @@ export default function MapSelector({
             <div className="flex items-center gap-2">
               <span className="text-2xl animate-bounce">🔮</span>
               <h3 className="text-lg sm:text-xl font-black text-white">
-                {viewMode === 'coverflow' ? '3D 차원장 플로팅 카드 덱' : '차원 게이트 매트릭스'}
+                {t.map.selectWorld}
               </h3>
             </div>
             <p className="text-xs sm:text-sm text-purple-300/80 font-medium mt-0.5">
-              {viewMode === 'coverflow' 
-                ? '좌우로 다라라락 넘겨 차원장의 균열을 조율하세요 (스와이프 / 방향키)' 
-                : '도약할 목표 세계관의 장소를 록온(Lock-on)하세요'}
+              {t.map.subTitle}
             </p>
           </div>
 
@@ -257,6 +257,7 @@ export default function MapSelector({
               }}
             >
               {SPOTS.map((spot, index) => {
+                const spotInfo = getSpotTranslation(spot.id);
                 const total = SPOTS.length;
                 // 무한 순환 링(Circular Loop) 오프셋 계산:
                 // 11번(마지막)에서 오른쪽으로 넘기면 0번(첫번째)이 바로 오른쪽에 위치하고,
@@ -385,7 +386,7 @@ export default function MapSelector({
                           {/* Lucky Item pill */}
                           <div className="absolute bottom-2 left-2 right-2">
                             <div className="px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-md border border-white/15 text-[11px] text-gray-200 flex items-center justify-between">
-                              <span className="text-amber-300 font-bold truncate">🎁 {spot.luckyItem}</span>
+                              <span className="text-amber-300 font-bold truncate">🎁 {spotInfo.luckyItem}</span>
                               <span className="text-[9px] text-purple-300 uppercase">Lucky</span>
                             </div>
                           </div>
@@ -396,7 +397,7 @@ export default function MapSelector({
                           <div>
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-extrabold text-purple-400 uppercase tracking-wider">
-                                {spot.worldName}
+                                {spotInfo.worldName}
                               </span>
                               {spot.bgmTitle && (
                                 <span className="text-[10px] text-gray-400 truncate max-w-[100px]">
@@ -405,13 +406,13 @@ export default function MapSelector({
                               )}
                             </div>
                             <h4 className="text-base sm:text-lg font-black text-white truncate mt-0.5 drop-shadow">
-                              {spot.locationName}
+                              {spotInfo.locationName}
                             </h4>
                           </div>
 
                           <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px]">
-                            <span className="text-gray-400">도약 소요</span>
-                            <span className="text-cyan-300 font-bold">⚡ 60초</span>
+                            <span className="text-gray-400">{language === 'en' ? 'Warp Time' : language === 'ja' ? '所要時間' : '도약 소요'}</span>
+                            <span className="text-cyan-300 font-bold">⚡ 60s</span>
                           </div>
                         </div>
                       </div>
@@ -443,32 +444,33 @@ export default function MapSelector({
                       e.stopPropagation();
                       handleSelectIndex(idx, idx > activeSpotIndex ? 'right' : 'left');
                     }}
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      idx === activeSpotIndex
-                        ? 'w-6 bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]'
-                        : 'w-2 bg-white/25 hover:bg-white/50'
-                    }`}
-                    title={s.locationName}
-                  />
-                ))}
-              </div>
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        idx === activeSpotIndex
+                          ? 'w-6 bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]'
+                          : 'w-2 bg-white/25 hover:bg-white/50'
+                      }`}
+                      title={getSpotTranslation(s.id).locationName}
+                    />
+                  ))}
+                </div>
 
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNext();
-                }}
-                className="w-10 h-10 rounded-full bg-black/70 hover:bg-purple-900/80 border border-purple-500/40 text-purple-200 flex items-center justify-center text-lg transition active:scale-90 shadow-lg hover:border-cyan-400"
-                title="다음 차원 (→ 키)"
-              >
-                ▶
-              </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNext();
+                  }}
+                  className="w-10 h-10 rounded-full bg-black/70 hover:bg-purple-900/80 border border-purple-500/40 text-purple-200 flex items-center justify-center text-lg transition active:scale-90 shadow-lg hover:border-cyan-400"
+                  title="Next Dimension (→)"
+                >
+                  ▶
+                </button>
+              </div>
             </div>
-          </div>
-        ) : (
-          /* ----------------- MODE B: CLASSIC 4-COLUMN MATRIX GRID ----------------- */
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3.5 sm:gap-4 max-h-[620px] overflow-y-auto pr-1.5 custom-scrollbar">
+          ) : (
+            /* ----------------- MODE B: CLASSIC 4-COLUMN MATRIX GRID ----------------- */
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3.5 sm:gap-4 max-h-[620px] overflow-y-auto pr-1.5 custom-scrollbar">
             {SPOTS.map((spot, index) => {
+              const spotInfo = getSpotTranslation(spot.id);
               const isCurrent = userState?.current_spot_id === spot.id;
               const isSelected = selectedSpot === spot.id;
               const isLocked = spot.isHidden && !isCodexComplete && !isAdmin;
@@ -479,7 +481,7 @@ export default function MapSelector({
                   <div
                     key={spot.id}
                     className="relative rounded-2xl overflow-hidden border border-purple-500/30 bg-gradient-to-b from-indigo-950/40 via-purple-950/20 to-black/80 p-3.5 flex flex-col justify-between cursor-not-allowed select-none min-h-[190px] group shadow-inner"
-                    title="소문에 의하면 다른 차원에 모두 다녀온 자만이 이동할 수 있는 특별한 차원의 틈새가 있다고 하는데..."
+                    title={t.map.lockedHidden}
                   >
                     <div className="flex justify-between items-start">
                       <span className="text-xl animate-pulse">🌌</span>
@@ -490,16 +492,16 @@ export default function MapSelector({
 
                     <div className="my-auto py-2 text-center flex flex-col items-center space-y-1.5">
                       <span className="text-xs font-black text-amber-300/90 tracking-wide">
-                        ??? 차원의 틈새
+                        ??? {spotInfo.name}
                       </span>
                       <p className="text-[10px] text-purple-200/70 italic leading-relaxed px-1 font-medium">
-                        "소문에 의하면 다른 차원에 모두 다녀온 자만이 이동할 수 있는 특별한 차원의 틈새가 있다고 하는데..."
+                        "{t.map.lockedHidden}"
                       </p>
                     </div>
 
                     <div className="pt-2 border-t border-purple-500/20 flex items-center justify-center">
                       <span className="text-[9px] font-extrabold text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-500/40 shadow-sm">
-                        🔒 도감 11종 수집 시 개방
+                        🔒 11 Codex Required
                       </span>
                     </div>
                   </div>
@@ -525,7 +527,7 @@ export default function MapSelector({
                   <div className="w-full h-24 sm:h-28 relative overflow-hidden">
                     <img 
                       src={spot.bgImage} 
-                      alt={spot.name}
+                      alt={spot.name} 
                       className="w-full h-full object-cover transition duration-500 group-hover:scale-110"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/30 to-transparent" />
@@ -533,17 +535,17 @@ export default function MapSelector({
                     <div className="absolute top-2 left-2 flex flex-col gap-1">
                       {isCurrent && (
                         <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-purple-600 text-white shadow">
-                          📍 현위치
+                          📍 {language === 'en' ? 'Here' : language === 'ja' ? '現在地' : '현위치'}
                         </span>
                       )}
                       {isSelected && !isCurrent && (
                         <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-cyan-500 text-black shadow animate-pulse">
-                          🎯 록온
+                          🎯 {language === 'en' ? 'Locked' : language === 'ja' ? 'ロック' : '록온'}
                         </span>
                       )}
                       {spot.isHidden && (
                         <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-500 text-black shadow animate-pulse">
-                          ⭐ 히든 스팟
+                          ⭐ 5D
                         </span>
                       )}
                     </div>
@@ -556,7 +558,7 @@ export default function MapSelector({
 
                     <div className="absolute bottom-1.5 left-2 right-2 flex items-center justify-between text-[10px] text-gray-300">
                       <span className="truncate font-semibold max-w-[120px]">
-                        🎁 {spot.luckyItem}
+                        🎁 {spotInfo.luckyItem}
                       </span>
                     </div>
                   </div>
@@ -564,17 +566,12 @@ export default function MapSelector({
                   <div className="p-2.5 bg-gray-950/90 flex flex-col justify-between flex-1">
                     <div>
                       <h4 className="text-xs sm:text-sm font-black text-white truncate drop-shadow-sm">
-                        {spot.locationName}
+                        {spotInfo.locationName}
                       </h4>
                       <span className="text-[10px] font-bold text-purple-300/80 block truncate">
-                        {spot.worldName}
+                        {spotInfo.worldName}
                       </span>
                     </div>
-                    {spot.isHidden && (
-                      <span className="text-[9px] text-amber-300 font-bold mt-1">
-                        ✨ 궁극의 5차원 시공간
-                      </span>
-                    )}
                   </div>
                 </div>
               );
@@ -590,24 +587,29 @@ export default function MapSelector({
               className="w-full sm:w-auto px-4 py-3.5 rounded-xl bg-purple-950/70 hover:bg-purple-900 border border-purple-500/40 text-purple-200 font-bold text-xs transition shadow-md whitespace-nowrap active:scale-95 flex items-center justify-center gap-1.5"
             >
               <span>⛩️</span>
-              <span>성소 귀환 (60초)</span>
+              <span>{t.map.sanctuaryButton} (60s)</span>
             </button>
           )}
 
-          <button
-            onClick={() => onStartMove(selectedSpot)}
-            disabled={userState?.current_spot_id === selectedSpot}
-            className={`w-full flex-1 py-3.5 px-5 rounded-xl font-black text-sm tracking-wide transition shadow-xl flex items-center justify-center space-x-2 ${
-              userState?.current_spot_id === selectedSpot
-                ? 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed'
-                : 'bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white shadow-cyan-500/20 hover:scale-[1.01] active:scale-[0.98]'
-            }`}
-          >
-            <span className="text-base animate-pulse">⚡</span>
-            <span>
-              [{activeSpot.locationName}] ({activeSpot.worldName}) (으)로 시공간 도약 개시 (60초)
-            </span>
-          </button>
+          {(() => {
+            const activeSpotInfo = getSpotTranslation(activeSpot.id);
+            return (
+              <button
+                onClick={() => onStartMove(selectedSpot)}
+                disabled={userState?.current_spot_id === selectedSpot}
+                className={`w-full flex-1 py-3.5 px-5 rounded-xl font-black text-sm tracking-wide transition shadow-xl flex items-center justify-center space-x-2 ${
+                  userState?.current_spot_id === selectedSpot
+                    ? 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white shadow-cyan-500/20 hover:scale-[1.01] active:scale-[0.98]'
+                }`}
+              >
+                <span className="text-base animate-pulse">⚡</span>
+                <span>
+                  [{activeSpotInfo.locationName}] ({activeSpotInfo.worldName}) — {t.map.warpButton}
+                </span>
+              </button>
+            );
+          })()}
         </div>
       </div>
     </div>

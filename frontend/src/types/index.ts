@@ -103,4 +103,32 @@ export interface FateHistoryItem {
   meta_info?: OmikujiMetaInfo;
   user_context?: string | null;
   llm_interpretation?: string | null;
+  feedback_rating?: number | null;
+  feedback_text?: string | null;
+}
+
+export interface LuckDistributionItem {
+  level: string;
+  count: number;
+  percentage: number;
+}
+
+export interface SpotDistributionItem {
+  spot_id: number;
+  name: string;
+  visits: number;
+}
+
+export interface ObservatoryStats {
+  total_travelers: number;
+  total_fortunes_drawn: number;
+  total_ai_interpretations: number;
+  feedback: {
+    total_rated: number;
+    positive: number;
+    negative: number;
+    satisfaction_rate: number;
+  };
+  luck_distribution: LuckDistributionItem[];
+  spot_distribution: SpotDistributionItem[];
 }
