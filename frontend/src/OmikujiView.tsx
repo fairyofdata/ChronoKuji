@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SPOTS } from './constants';
+import { SPOTS, getLocalizedLuckName, getLocalizedLuckDisplay } from './constants';
 import { OmikujiResult, LlmInterpretationResult, Spot } from './types';
 import { useToast } from './Toast';
 import { getSpacetimeFortune } from './omikujiLore';
@@ -155,7 +155,7 @@ export default function OmikujiView({
     const spotName = spotInfo?.locationName || activeSpot?.locationName;
     const worldName = spotInfo?.worldName || activeSpot?.worldName;
     const luckyItem = spotInfo?.luckyItem || activeSpot?.luckyItem;
-    const text = `🥠 [ChronoKuji]\n${language === 'en' ? 'Dimension' : language === 'ja' ? '次元' : '차원'}: ${worldName} (${spotName})\n${t.omikuji.gradeLabel}: ${result.luck_level}\n${t.omikuji.luckyItemLabel}: ${luckyItem}\n\n${displayPoem ? `"${displayPoem}"\n` : ''}${t.omikuji.overallTitle}: ${displayText || ''}\n\nhttps://chronokuji.web.app`;
+    const text = `🥠 [ChronoKuji]\n${language === 'en' ? 'Dimension' : language === 'ja' ? '次元' : '차원'}: ${worldName} (${spotName})\n${t.omikuji.gradeLabel}: ${getLocalizedLuckDisplay(result.luck_level, language)}\n${t.omikuji.luckyItemLabel}: ${luckyItem}\n\n${displayPoem ? `"${displayPoem}"\n` : ''}${t.omikuji.overallTitle}: ${displayText || ''}\n\nhttps://chronokuji.web.app`;
     navigator.clipboard.writeText(text).then(() => {
       showToast({
         type: 'success',
@@ -303,11 +303,18 @@ export default function OmikujiView({
         {/* Big Luck Level Display */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-2 border-b border-gray-800/80">
           <div className="flex items-center space-x-3">
-            <div className={`text-3xl sm:text-4xl font-black px-4 py-2 rounded-2xl shadow-xl flex items-center justify-center font-serif tracking-widest ${getLuckBadgeStyle(result.luck_level)}`}>
-              {result.luck_level}
+            <div className={`px-4 py-2 min-w-[4.5rem] rounded-2xl shadow-xl flex flex-col items-center justify-center font-serif tracking-widest ${getLuckBadgeStyle(result.luck_level)}`}>
+              <span className="text-2xl sm:text-3xl font-black">{result.luck_level}</span>
+              {language !== 'ja' && (
+                <span className="text-[11px] sm:text-xs font-sans font-black tracking-normal opacity-95 mt-0.5 whitespace-nowrap">
+                  {getLocalizedLuckName(result.luck_level, language)}
+                </span>
+              )}
             </div>
             <div className="text-left">
-              <p className="text-xs text-gray-400">{t.omikuji.gradeLabel}</p>
+              <p className="text-xs text-gray-400">
+                {t.omikuji.gradeLabel}: <span className="text-amber-300 font-extrabold">{getLocalizedLuckDisplay(result.luck_level, language)}</span>
+              </p>
               <p className="text-sm font-bold text-gray-200">
                 {result.luck_level === '大吉' ? t.omikuji.greatLuckCheer : 
                  result.luck_level === '凶' || result.luck_level === '大凶' ? (isTied ? t.omikuji.purifiedWarn : t.omikuji.badLuckWarn) : 

@@ -317,3 +317,26 @@ export const CODEX_ITEMS: CodexItem[] = [
     desc: '크라이덴 평원의 산들바람과 자유가 깃든 신비로운 깃털'
   }
 ];
+
+export const LUCK_LEVEL_NAMES: Record<string, { ko: string; en: string; ja: string }> = {
+  '大吉': { ko: '대길', en: 'Great Blessing', ja: '大吉' },
+  '中吉': { ko: '중길', en: 'Middle Blessing', ja: '中吉' },
+  '小吉': { ko: '소길', en: 'Small Blessing', ja: '小吉' },
+  '吉':   { ko: '길',   en: 'Blessing', ja: '吉' },
+  '末吉': { ko: '말길', en: 'Future Blessing', ja: '末吉' },
+  '凶':   { ko: '흉',   en: 'Misfortune', ja: '凶' },
+  '大凶': { ko: '대흉', en: 'Great Misfortune', ja: '大凶' },
+};
+
+export function getLocalizedLuckName(level: string, lang: 'ko' | 'en' | 'ja' = 'en'): string {
+  const item = LUCK_LEVEL_NAMES[level];
+  if (!item) return level;
+  return item[lang] || item.en || level;
+}
+
+export function getLocalizedLuckDisplay(level: string, lang: 'ko' | 'en' | 'ja' = 'en'): string {
+  if (lang === 'ja') return level;
+  const item = LUCK_LEVEL_NAMES[level];
+  if (!item) return level;
+  return `${item[lang]} (${level})`;
+}

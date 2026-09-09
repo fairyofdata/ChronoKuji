@@ -9,7 +9,7 @@ import FortuneShakeModal from './FortuneShakeModal';
 import ShareTicketModal from './ShareTicketModal';
 import ObservatoryStatsModal from './ObservatoryStatsModal';
 import PwaInstallBanner from './PwaInstallBanner';
-import { SPOTS, CODEX_ITEMS } from './constants';
+import { SPOTS, CODEX_ITEMS, getLocalizedLuckDisplay } from './constants';
 import { AudioEngine } from './audioEngine';
 import { auth, loginWithGoogle, logoutFirebase, onAuthStateChanged, FirebaseUser } from './firebase';
 import { UserState, OmikujiResult, LlmInterpretationResult, CollectedCodexItem } from './types';
@@ -614,7 +614,11 @@ function AppContent() {
 
       showToast({
         type: data.luck_level === '大吉' ? 'success' : data.luck_level === '凶' || data.luck_level === '大凶' ? 'warning' : 'info',
-        title: language === 'en' ? `🥠 Fortune [${data.luck_level}] Revealed` : language === 'ja' ? `🥠 おみくじ [${data.luck_level}] 出現` : `🥠 점괘 [${data.luck_level}] 출현`,
+        title: language === 'en' 
+          ? `🥠 Fortune [${getLocalizedLuckDisplay(data.luck_level, 'en')}] Revealed` 
+          : language === 'ja' 
+          ? `🥠 おみくじ [${data.luck_level}] 出現` 
+          : `🥠 점괘 [${getLocalizedLuckDisplay(data.luck_level, 'ko')}] 출현`,
         message: language === 'en' ? 'The tapestry of your destiny unfolds.' : language === 'ja' ? '運命のおみくじが開かれました。' : '운명의 점괘가 펼쳐졌습니다.'
       });
       // 도감 갱신
@@ -733,7 +737,7 @@ function AppContent() {
               {!omikujiResult && (
                 <div className="w-full max-w-2xl mx-auto p-6 sm:p-8 rounded-3xl backdrop-blur-2xl bg-black/55 border border-purple-500/30 shadow-2xl flex flex-col items-center text-center space-y-4">
                   <span className="text-xs font-bold text-purple-300 tracking-wider uppercase">
-                    {currentSpotInfo?.worldName || currentSpot?.worldName} • 神社
+                    {currentSpotInfo?.worldName || currentSpot?.worldName} • {language === 'en' ? 'Shrine' : language === 'ja' ? '神社' : '신사'}
                   </span>
                   <h2 className="text-xl sm:text-3xl font-black text-white drop-shadow">
                     {currentSpotInfo?.locationName || currentSpot?.locationName}

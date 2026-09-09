@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SPOTS } from './constants';
+import { SPOTS, getLocalizedLuckDisplay } from './constants';
 import { OmikujiResult } from './types';
 import { useLanguage } from './i18n/LanguageContext';
 
@@ -73,7 +73,7 @@ export default function ShareTicketModal({ isOpen, onClose, result, spotId }: Sh
             </div>
             <div className="text-right">
               <span className="text-[10px] text-gray-400 block">LUCK RANK</span>
-              <span className="text-sm font-black text-amber-300">{result.luck_level}</span>
+              <span className="text-sm font-black text-amber-300">{getLocalizedLuckDisplay(result.luck_level, language)}</span>
             </div>
           </div>
 

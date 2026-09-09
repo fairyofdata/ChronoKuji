@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SPOTS } from './constants';
+import { SPOTS, getLocalizedLuckDisplay } from './constants';
 import { AudioEngine } from './audioEngine';
 import { FateHistoryItem } from './types';
 import { API_BASE_URL } from './config';
@@ -125,7 +125,7 @@ export default function HistoryModal({ isOpen, onClose, userId, currentSpotId }:
                         {spotInfo ? `${spotInfo.locationName} (${spotInfo.worldName})` : (spot ? spot.name : "Sanctuary Rift")}
                       </span>
                       <span className="text-[10px] bg-purple-950 px-2 py-0.5 rounded border border-purple-500/30 text-purple-200 font-bold">
-                        {item.luck_level}
+                        {getLocalizedLuckDisplay(item.luck_level, language)}
                       </span>
                     </div>
                     <span className="text-[10px] text-gray-400 font-mono">{dateStr}</span>

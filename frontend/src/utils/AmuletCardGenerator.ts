@@ -1,5 +1,6 @@
 import { Spot } from '../types';
 import { SpotTranslation, Language } from '../i18n/types';
+import { getLocalizedLuckName } from '../constants';
 
 interface GenerateAmuletOptions {
   spot: Spot;
@@ -41,7 +42,7 @@ export async function generateAmuletCardImage({
     ? 'CHRONO KUJI • MULTIVERSE OMIKUJI' 
     : language === 'ja' 
     ? 'CHRONO KUJI • 次元神籤' 
-    : 'CHRONO KUJI • 차원 신초';
+    : 'CHRONO KUJI • 차원 점괘';
 
   const itemBoxTitle = language === 'en'
     ? '✨ Lucky Multiverse Item'
@@ -169,10 +170,17 @@ export async function generateAmuletCardImage({
   ctx.strokeRect(-118, -118, 236, 236);
 
   ctx.fillStyle = isGreat ? '#ef4444' : (luckLevel.includes('凶') ? '#c084fc' : '#fbbf24');
-  ctx.font = '900 130px serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(luckLevel, 0, -5);
+  if (language === 'ja') {
+    ctx.font = '900 130px serif';
+    ctx.fillText(luckLevel, 0, -5);
+  } else {
+    ctx.font = '900 96px serif';
+    ctx.fillText(luckLevel, 0, -26);
+    ctx.font = 'bold 30px sans-serif';
+    ctx.fillText(getLocalizedLuckName(luckLevel, language), 0, 62);
+  }
   ctx.restore();
 
   // 7. Fortune Poem Verse

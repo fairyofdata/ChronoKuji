@@ -82,7 +82,7 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
         <div className="flex items-center space-x-2">
           <span className="animate-spin text-amber-400 text-sm">✦</span>
           <span className="text-[11px] font-black text-purple-300 tracking-widest uppercase">
-            {spotInfo?.worldName || spot?.worldName || "Multiverse"} • 運命の筒
+            {spotInfo?.worldName || spot?.worldName || "Multiverse"} • {language === 'en' ? 'Cylinder of Fate' : language === 'ja' ? '運命の筒' : '운명의 산통'}
           </span>
           <span className="animate-spin text-amber-400 text-sm">✦</span>
         </div>
@@ -114,7 +114,7 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
             }`}
           >
             <span className="text-[10px] font-black text-amber-950 font-serif writing-vertical tracking-widest">
-              第{fortuneNumber}番
+              {language === 'en' ? `#${fortuneNumber}` : language === 'ja' ? `第${fortuneNumber}番` : `제 ${fortuneNumber} 번`}
             </span>
           </div>
 
@@ -141,7 +141,7 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
               {/* Tap Ripple / Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 flex flex-col justify-end items-center p-3">
                 <span className={`text-[11px] font-extrabold px-3 py-1 rounded-full backdrop-blur-md transition-all ${
-                  isStickEjecting
+                  isStickEjecting 
                     ? 'bg-amber-500 text-black animate-bounce shadow-lg shadow-amber-400/50'
                     : isAnimating 
                     ? 'bg-amber-400 text-black scale-105' 
@@ -157,14 +157,20 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
             /* Traditional Unfolding Paper Seal */
             <div className="w-52 h-64 bg-[#fbf8ee] text-gray-950 rounded-2xl shadow-2xl border-2 border-amber-300 p-4 flex flex-col items-center justify-between animate-unfold relative overflow-hidden font-serif">
               <div className="border-b border-gray-300 pb-1.5 w-full text-center">
-                <span className="text-[9px] font-mono text-gray-500 block">CHRONO • 第{fortuneNumber}番</span>
-                <span className="text-xs font-bold text-gray-800">{spotInfo?.worldName || spot?.worldName} 御神籤</span>
+                <span className="text-[9px] font-mono text-gray-500 block">
+                  CHRONO • {language === 'en' ? `No. ${fortuneNumber}` : language === 'ja' ? `第${fortuneNumber}番` : `제 ${fortuneNumber} 번`}
+                </span>
+                <span className="text-xs font-bold text-gray-800">
+                  {spotInfo?.worldName || spot?.worldName} {language === 'en' ? 'Fortune' : language === 'ja' ? '御神籤' : '점괘'}
+                </span>
               </div>
 
               <div className="py-2">
                 <div className="w-20 h-20 rounded-2xl border-4 border-red-600 bg-red-950/10 flex flex-col items-center justify-center font-black tracking-widest text-red-600 shadow-md transform rotate-[-3deg] animate-stamp">
-                  <span className="text-3xl">神籤</span>
-                  <span className="text-[8px] font-sans">FATE SEAL</span>
+                  <span className="text-2xl font-serif">
+                    {language === 'en' ? 'FATE' : language === 'ja' ? '神籤' : '점괘'}
+                  </span>
+                  <span className="text-[8px] font-sans font-bold">FATE SEAL</span>
                 </div>
               </div>
 

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Spot } from './types';
+import { useLanguage } from './i18n/LanguageContext';
+import { getLocalizedLuckName } from './constants';
 
 interface OmikujiShakerModalProps {
   spot: Spot | undefined;
@@ -8,6 +10,7 @@ interface OmikujiShakerModalProps {
 }
 
 export default function OmikujiShakerModal({ spot, luckLevel, onComplete }: OmikujiShakerModalProps) {
+  const { language } = useLanguage();
   // stages: 'shaking' -> 'stick_revealed' -> 'paper_unfolding'
   const [stage, setStage] = useState<'shaking' | 'stick_revealed' | 'paper_unfolding'>('shaking');
   const [fortuneNumber] = useState(() => Math.floor(Math.random() * 88) + 1);
@@ -176,24 +179,32 @@ export default function OmikujiShakerModal({ spot, luckLevel, onComplete }: Omik
             {/* Paper Header */}
             <div className="border-b-2 border-dashed border-gray-400/70 pb-3 w-full text-center">
               <span className="text-[10px] text-gray-500 font-mono tracking-widest block mb-0.5">
-                CHRONO OMIKUJI • 第{fortuneNumber}番
+                CHRONO • {language === 'en' ? `No. ${fortuneNumber}` : language === 'ja' ? `第${fortuneNumber}番` : `제 ${fortuneNumber} 번`}
               </span>
               <h3 className="text-base font-extrabold text-gray-800 tracking-wider">
-                {spot?.worldName} 御神籤
+                {spot?.worldName} {language === 'en' ? 'Fortune' : language === 'ja' ? '御神籤' : '점괘'}
               </h3>
             </div>
 
             {/* Grand Stamp Seal (쾅 찍히는 낙관 인장) */}
             <div className="py-3">
               <div className={`w-24 h-24 rounded-2xl border-4 flex flex-col items-center justify-center font-black tracking-widest shadow-lg transform rotate-[-4deg] animate-stamp ${getSealColor(luckLevel)}`}>
-                <span className="text-4xl">{luckLevel}</span>
-                <span className="text-[9px] font-sans tracking-tight uppercase mt-0.5">FATE SEAL</span>
+                <span className="text-3xl font-serif">{luckLevel}</span>
+                {language !== 'ja' && (
+                  <span className="text-[10px] font-sans font-bold tracking-tight">
+                    {getLocalizedLuckName(luckLevel, language)}
+                  </span>
+                )}
+                <span className="text-[8px] font-sans tracking-tight uppercase opacity-75">FATE SEAL</span>
               </div>
             </div>
 
             <p className="text-xs text-gray-600 font-medium leading-relaxed">
-              차원의 운명이 기록되었습니다.<br />
-              상세한 차원의 시구와 세부운을 확인하세요.
+              {language === 'en' 
+                ? 'Your dimensional destiny has been sealed.' 
+                : language === 'ja' 
+                ? '次元の運命が刻まれました。' 
+                : '차원의 운명이 기록되었습니다.'}
             </p>
 
             {/* Complete Action Button */}
