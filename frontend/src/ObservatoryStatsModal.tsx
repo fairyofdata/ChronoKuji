@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ObservatoryStats } from './types';
-import { LocalGameService } from './services/LocalGameService';
+import { LocalGameService } from './services/localGameService';
 import { useLanguage } from './i18n/LanguageContext';
 
 interface ObservatoryStatsModalProps {

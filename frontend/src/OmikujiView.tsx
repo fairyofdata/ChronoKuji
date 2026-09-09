@@ -4,7 +4,7 @@ import { OmikujiResult, LlmInterpretationResult, Spot } from './types';
 import { useToast } from './Toast';
 import { getSpacetimeFortune } from './omikujiLore';
 import { generateAmuletCardImage } from './utils/AmuletCardGenerator';
-import { LocalGameService } from './services/LocalGameService';
+import { LocalGameService } from './services/localGameService';
 import { useLanguage } from './i18n/LanguageContext';
 
 interface OmikujiViewProps {
