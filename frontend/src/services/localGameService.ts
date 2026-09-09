@@ -32,11 +32,15 @@ export class LocalGameService {
     if (raw) {
       try {
         const state: UserState = JSON.parse(raw);
-        // 이동 중인 경우 도착 시간 검증
+        // 이동 중인 경우 도착 시간 검증 및 즉각 정규화
         if (state.target_spot_id !== null && state.arrival_time) {
           const arrival = new Date(state.arrival_time);
           if (now >= arrival) {
+            state.current_spot_id = state.target_spot_id === 0 ? null : state.target_spot_id;
+            state.target_spot_id = null;
+            state.arrival_time = null;
             state.is_arrived = true;
+            this.saveUserState(state);
           }
         }
         return state;

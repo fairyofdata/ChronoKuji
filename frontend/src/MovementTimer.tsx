@@ -14,7 +14,7 @@ interface MovementTimerProps {
 }
 
 export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, onBrake }: MovementTimerProps) {
-  const { t, getSpotTranslation } = useLanguage();
+  const { t, getSpotTranslation, language } = useLanguage();
   const [logIndex, setLogIndex] = useState(0);
   const [totalBrakedSeconds, setTotalBrakedSeconds] = useState(0);
   const [isBrakingPulse, setIsBrakingPulse] = useState(false);
@@ -55,12 +55,18 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, 
     return () => clearInterval(interval);
   }, [t.movement.spacetimeLogs]);
 
-  // 카운트다운 시작 감지
+  // 카운트다운 시작 감지 및 도착 자동 트리거 안전망
   useEffect(() => {
     if (currentSeconds > 0) {
       hasCountedDownRef.current = true;
+    } else if (isMoving) {
+      // 0초에 도달했거나 이미 시간이 지난 상태라면 지체 없이 자동 도착 처리
+      const timer = setTimeout(() => {
+        onArrive();
+      }, 500);
+      return () => clearTimeout(timer);
     }
-  }, [currentSeconds]);
+  }, [currentSeconds, isMoving]);
 
   if (!isMoving) return null;
 
@@ -137,8 +143,20 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, 
               </p>
             </>
           ) : (
-            <div className="flex items-center space-x-2 py-2 text-yellow-300 animate-pulse text-base font-black">
-              <span>{t.movement.arrivingSoon}</span>
+            <div className="flex flex-col items-center space-y-2 py-1">
+              <div className="flex items-center space-x-2 text-yellow-300 animate-pulse text-sm sm:text-base font-black">
+                <span>✨ {t.movement.arrivingSoon}</span>
+              </div>
+              <button
+                type="button"
+                onClick={onArrive}
+                className="py-2 px-5 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-gray-950 font-black text-xs sm:text-sm tracking-wide shadow-xl shadow-emerald-500/30 active:scale-95 transition-all flex items-center space-x-1.5 animate-bounce"
+              >
+                <span>⛩️</span>
+                <span>
+                  {language === 'en' ? 'Enter Dimension' : language === 'ja' ? '次元突入 (Enter)' : '차원 진입하기 (Enter)'}
+                </span>
+              </button>
             </div>
           )}
         </div>
@@ -196,12 +214,12 @@ export default function MovementTimer({ userState, timeLeft, isAdmin, onArrive, 
 
           <p className="text-xs sm:text-sm font-bold text-cyan-100 leading-relaxed min-h-[38px] flex items-center">
             {currentSeconds > 45 
-              ? t.movement.phase1Desc(targetSpotInfo?.worldName || t.movement.sanctuaryRift)
+              ? (typeof t.movement.phase1Desc === 'function' ? t.movement.phase1Desc(targetSpotInfo?.worldName || t.movement.sanctuaryRift) : (t.movement.phase1Desc || 'Traversing dimensional event horizon...'))
               : currentSeconds > 30
-              ? t.movement.phase2Desc(targetSpotInfo?.luckyItem || "Piece of Miracle")
+              ? (typeof t.movement.phase2Desc === 'function' ? t.movement.phase2Desc(targetSpotInfo?.luckyItem || "Piece of Miracle") : (t.movement.phase2Desc || 'Synching temporal frequency resonance...'))
               : currentSeconds > 15
-              ? t.movement.phase3Desc(targetSpotInfo?.locationName || targetDisplay)
-              : t.movement.phase4Desc(targetSpotInfo?.locationName || targetDisplay)}
+              ? (typeof t.movement.phase3Desc === 'function' ? t.movement.phase3Desc(targetSpotInfo?.locationName || targetDisplay) : (t.movement.phase3Desc || 'Materializing world coordinates...'))
+              : (typeof t.movement.phase4Desc === 'function' ? t.movement.phase4Desc(targetSpotInfo?.locationName || targetDisplay) : (t.movement.phase4Desc || 'Final atmospheric entry & landing...'))}
           </p>
         </div>
 

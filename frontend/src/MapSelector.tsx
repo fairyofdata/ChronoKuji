@@ -28,6 +28,7 @@ export default function MapSelector({
   const currentSpot = userState?.current_spot_id 
     ? SPOTS.find(s => s.id === userState.current_spot_id) 
     : null;
+  const currentSpotInfo = currentSpot ? getSpotTranslation(currentSpot.id) : null;
 
   // 활성 선택된 스팟 인덱스
   const activeSpotIndex = Math.max(0, SPOTS.findIndex(s => s.id === selectedSpot));
@@ -133,7 +134,10 @@ export default function MapSelector({
             </span>
           </div>
           <span className="text-[11px] sm:text-xs font-bold px-3.5 py-1 rounded-full bg-purple-950/80 border border-purple-500/40 text-purple-200">
-            {currentSpot ? `📍 현위치: ${currentSpot.locationName} (${currentSpot.worldName})` : "⛩️ 차원의 균열 (성소)"}
+            {currentSpotInfo 
+              ? `📍 ${language === 'en' ? 'Current' : language === 'ja' ? '現在位置' : '현위치'}: ${currentSpotInfo.locationName} (${currentSpotInfo.worldName})` 
+              : (language === 'en' ? '⛩️ Dimensional Rift (Sanctuary)' : language === 'ja' ? '⛩️ 次元の狭間 (聖所)' : '⛩️ 차원의 균열 (성소)')
+            }
           </span>
         </div>
 
@@ -141,13 +145,13 @@ export default function MapSelector({
           <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl group">
             <img 
               src={currentSpot.bgImage} 
-              alt={currentSpot.name} 
+              alt={currentSpotInfo?.name || currentSpot.name} 
               className="w-full h-44 sm:h-56 lg:h-64 object-cover transition-transform duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent flex flex-col justify-end p-5 text-left">
               <div className="flex flex-wrap items-center gap-2 mb-1.5">
                 <span className="text-xs font-extrabold px-3 py-0.5 rounded-full bg-purple-600 text-white shadow">
-                  {currentSpot.worldName}
+                  {currentSpotInfo?.worldName || currentSpot.worldName}
                 </span>
                 {currentSpot.bgmTitle && (
                   <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-black/70 border border-white/10 text-purple-300">
@@ -156,7 +160,7 @@ export default function MapSelector({
                 )}
               </div>
               <h2 className="text-2xl sm:text-3xl font-black text-white drop-shadow-md">
-                {currentSpot.locationName}
+                {currentSpotInfo?.locationName || currentSpot.locationName}
               </h2>
             </div>
           </div>
@@ -192,7 +196,7 @@ export default function MapSelector({
           <div className="flex items-center gap-2 self-end sm:self-auto">
             {(isCodexComplete || isAdmin) && (
               <span className="text-[11px] text-amber-300 font-bold bg-amber-950/80 px-2.5 py-1 rounded-full border border-amber-500/40 animate-pulse">
-                ⭐ 5차원 해금
+                ⭐ {language === 'en' ? '5D Unlocked' : language === 'ja' ? '5次元解放' : '5차원 해금'}
               </span>
             )}
 
@@ -208,10 +212,10 @@ export default function MapSelector({
                     ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30'
                     : 'text-gray-400 hover:text-white'
                 }`}
-                title="공중에 뜬 마법사 카드 덱 넘기기"
+                title={language === 'en' ? '3D Floating Deck View' : language === 'ja' ? '3D浮遊デッキ' : '3D 플로팅 덱 넘기기'}
               >
                 <span>🎴</span>
-                <span>3D 덱</span>
+                <span>{language === 'en' ? '3D Deck' : language === 'ja' ? '3Dデッキ' : '3D 덱'}</span>
               </button>
               <button
                 onClick={() => {
@@ -223,10 +227,10 @@ export default function MapSelector({
                     ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30'
                     : 'text-gray-400 hover:text-white'
                 }`}
-                title="전체 12개 차원 한눈에 보기"
+                title={language === 'en' ? '12 Dimensions Matrix Grid View' : language === 'ja' ? '12次元グリッド' : '전체 12개 차원 한눈에 보기'}
               >
                 <span>⊞</span>
-                <span>그리드</span>
+                <span>{language === 'en' ? 'Grid' : language === 'ja' ? 'グリッド' : '그리드'}</span>
               </button>
             </div>
           </div>
@@ -334,15 +338,15 @@ export default function MapSelector({
                           <div className="w-16 h-16 mx-auto rounded-full bg-purple-900/40 border border-purple-500/40 flex items-center justify-center text-3xl animate-spin-slow">
                             🔒
                           </div>
-                          <h4 className="text-base font-black text-amber-300">??? 차원의 틈새</h4>
+                          <h4 className="text-base font-black text-amber-300">??? {spotInfo.name}</h4>
                           <p className="text-xs text-purple-200/70 italic px-2">
-                            "모든 11대 차원의 흔적을 모은 자만이 열 수 있는 미지의 시공간"
+                            "{t.map.lockedHidden}"
                           </p>
                         </div>
 
                         <div className="pt-2 border-t border-purple-500/30">
                           <span className="text-[10px] font-bold text-amber-400 bg-amber-950/90 px-3 py-1 rounded-full border border-amber-500/50">
-                            도감 11종 수집 시 개방
+                            {language === 'en' ? '🔒 11 Codex Required' : language === 'ja' ? '🔒 図鑑11種収集で解放' : '🔒 도감 11종 수집 시 개방'}
                           </span>
                         </div>
                       </div>
@@ -362,17 +366,17 @@ export default function MapSelector({
                           <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
                             {isCurrent && (
                               <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-purple-600 text-white shadow-md">
-                                📍 현위치
+                                📍 {language === 'en' ? 'Here' : language === 'ja' ? '現在地' : '현위치'}
                               </span>
                             )}
                             {isCenter && !isCurrent && (
                               <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-cyan-400 text-black shadow-md animate-pulse">
-                                🎯 록온됨
+                                🎯 {language === 'en' ? 'Target' : language === 'ja' ? 'ロック' : '록온됨'}
                               </span>
                             )}
                             {spot.isHidden && (
                               <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-400 text-black shadow-md">
-                                ⭐ 테서렉트
+                                ⭐ {language === 'en' ? 'Tesseract' : language === 'ja' ? '超立方体' : '테서렉트'}
                               </span>
                             )}
                           </div>
@@ -430,7 +434,7 @@ export default function MapSelector({
                   handlePrev();
                 }}
                 className="w-10 h-10 rounded-full bg-black/70 hover:bg-purple-900/80 border border-purple-500/40 text-purple-200 flex items-center justify-center text-lg transition active:scale-90 shadow-lg hover:border-cyan-400"
-                title="이전 차원 (← 키)"
+                title={language === 'en' ? 'Previous Dimension (← Key)' : language === 'ja' ? '前の次元 (← キー)' : '이전 차원 (← 키)'}
               >
                 ◀
               </button>
@@ -460,7 +464,7 @@ export default function MapSelector({
                     handleNext();
                   }}
                   className="w-10 h-10 rounded-full bg-black/70 hover:bg-purple-900/80 border border-purple-500/40 text-purple-200 flex items-center justify-center text-lg transition active:scale-90 shadow-lg hover:border-cyan-400"
-                  title="Next Dimension (→)"
+                  title={language === 'en' ? 'Next Dimension (→ Key)' : language === 'ja' ? '次の次元 (→ キー)' : '다음 차원 (→ 키)'}
                 >
                   ▶
                 </button>
@@ -501,7 +505,7 @@ export default function MapSelector({
 
                     <div className="pt-2 border-t border-purple-500/20 flex items-center justify-center">
                       <span className="text-[9px] font-extrabold text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-500/40 shadow-sm">
-                        🔒 11 Codex Required
+                        {language === 'en' ? '🔒 11 Codex Required' : language === 'ja' ? '🔒 図鑑11種収集で解放' : '🔒 도감 11종 수집 시 개방'}
                       </span>
                     </div>
                   </div>

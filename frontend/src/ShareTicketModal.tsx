@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SPOTS } from './constants';
 import { OmikujiResult } from './types';
+import { useLanguage } from './i18n/LanguageContext';
 
 interface ShareTicketModalProps {
   isOpen: boolean;
@@ -10,10 +11,12 @@ interface ShareTicketModalProps {
 }
 
 export default function ShareTicketModal({ isOpen, onClose, result, spotId }: ShareTicketModalProps) {
+  const { language, getSpotTranslation } = useLanguage();
   const [copied, setCopied] = useState<boolean>(false);
   if (!isOpen || !result) return null;
 
   const spot = SPOTS.find(s => s.id === spotId);
+  const spotInfo = spot ? getSpotTranslation(spot.id) : null;
 
   const handleCopyLink = () => {
     if (typeof window !== 'undefined') {
@@ -22,6 +25,28 @@ export default function ShareTicketModal({ isOpen, onClose, result, spotId }: Sh
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  const ticketTitle = language === 'en'
+    ? 'Multiverse Fate Ticket'
+    : language === 'ja'
+    ? '次元運命チケット'
+    : '차원 운명 티켓';
+
+  const luckyItemLabel = language === 'en'
+    ? 'Lucky Item'
+    : language === 'ja'
+    ? '幸運アイテム'
+    : '행운 아이템';
+
+  const copyButtonText = copied
+    ? (language === 'en' ? '✅ Link Copied!' : language === 'ja' ? '✅ リンクをコピーしました！' : '✅ 링크 복사 완료!')
+    : (language === 'en' ? '🔗 Copy Share Link' : language === 'ja' ? '🔗 共有リンクをコピー' : '🔗 공유 링크 복사');
+
+  const closeButtonText = language === 'en'
+    ? 'Close'
+    : language === 'ja'
+    ? '閉じる'
+    : '닫기';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg animate-fade-in text-white">
@@ -34,7 +59,7 @@ export default function ShareTicketModal({ isOpen, onClose, result, spotId }: Sh
           <span className="text-[10px] font-bold text-purple-400 tracking-widest uppercase">
             CHRONO PASS • MULTIVERSE FATE TICKET
           </span>
-          <h3 className="text-lg font-black text-white">차원 운명 티켓</h3>
+          <h3 className="text-lg font-black text-white">{ticketTitle}</h3>
         </div>
 
         {/* Cinematic Ticket Body */}
@@ -42,7 +67,9 @@ export default function ShareTicketModal({ isOpen, onClose, result, spotId }: Sh
           <div className="flex justify-between items-center border-b border-gray-800 pb-2">
             <div>
               <span className="text-[10px] text-gray-400 block">DESTINATION</span>
-              <span className="text-xs font-black text-purple-300">{spot?.name}</span>
+              <span className="text-xs font-black text-purple-300">
+                {spotInfo ? `${spotInfo.locationName} (${spotInfo.worldName})` : (spot?.name || 'Sanctuary')}
+              </span>
             </div>
             <div className="text-right">
               <span className="text-[10px] text-gray-400 block">LUCK RANK</span>
@@ -51,10 +78,10 @@ export default function ShareTicketModal({ isOpen, onClose, result, spotId }: Sh
           </div>
 
           <div className="w-full h-28 rounded-xl overflow-hidden relative border border-gray-800">
-            <img src={spot?.bgImage} alt={spot?.name} className="w-full h-full object-cover filter brightness-90" />
+            <img src={spot?.bgImage} alt={spotInfo?.name || spot?.name} className="w-full h-full object-cover filter brightness-90" />
             <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent flex items-end p-2">
               <span className="text-[11px] font-bold text-white">
-                행운 아이템: {spot?.luckyItem}
+                {luckyItemLabel}: {spotInfo?.luckyItem || spot?.luckyItem}
               </span>
             </div>
           </div>
@@ -78,13 +105,13 @@ export default function ShareTicketModal({ isOpen, onClose, result, spotId }: Sh
             onClick={handleCopyLink}
             className="flex-1 py-3 px-4 rounded-xl font-extrabold text-xs bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg transition"
           >
-            {copied ? "✅ 링크 복사 완료!" : "🔗 공유 링크 복사"}
+            {copyButtonText}
           </button>
           <button
             onClick={onClose}
             className="py-3 px-4 rounded-xl font-bold text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 transition"
           >
-            닫기
+            {closeButtonText}
           </button>
         </div>
       </div>

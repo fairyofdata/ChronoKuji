@@ -184,7 +184,7 @@ export default function ObservatoryStatsModal({ isOpen, onClose }: ObservatorySt
                             </span>
                           </div>
                           <span className="text-amber-400 font-mono font-bold text-[11px] ml-2 shrink-0">
-                            {t.stats.visitsCount(spot.visits)}
+                            {typeof t.stats.visitsCount === 'function' ? t.stats.visitsCount(spot.visits) : `${spot.visits} visits`}
                           </span>
                         </div>
                       );

@@ -330,7 +330,7 @@ export default function OmikujiView({
         {displayPoem && (
           <div className="my-3.5 p-4 bg-gradient-to-r from-gray-950 via-purple-950/30 to-gray-950 rounded-2xl border border-purple-500/30 text-center font-serif shadow-inner">
             <span className="text-[10px] text-purple-400 font-mono tracking-widest block mb-1">
-              ✦ {t.omikuji.poemTitle(spotInfo?.worldName || "Chrono World")} ✦
+              ✦ {typeof t.omikuji.poemTitle === 'function' ? t.omikuji.poemTitle(spotInfo?.worldName || "Chrono World") : `${spotInfo?.worldName || "Chrono World"} 運勢詩`} ✦
             </span>
             <p className="text-xs sm:text-sm text-amber-200 font-bold italic leading-relaxed">
               "{displayPoem}"
@@ -448,7 +448,9 @@ export default function OmikujiView({
           <div className="flex items-center space-x-2">
             <span className="text-lg">🔮</span>
             <h4 className="text-sm font-extrabold text-white">
-              {t.omikuji.aiTitle(spotInfo?.worldName || activeSpot?.worldName || "")}
+              {typeof t.omikuji.aiTitle === 'function' 
+                ? (t.omikuji.aiTitle as (w?: string) => string)(spotInfo?.worldName || activeSpot?.worldName || "") 
+                : (String(t.omikuji.aiTitle) || "AI Deep Spacetime Counsel")}
             </h4>
           </div>
 
@@ -457,12 +459,12 @@ export default function OmikujiView({
               onClick={() => setShowSamplePreview(prev => !prev)}
               className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-indigo-950/80 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-900/80 transition shadow"
             >
-              {t.omikuji.sampleToggle(showSamplePreview)}
+              {typeof t.omikuji.sampleToggle === 'function' ? t.omikuji.sampleToggle(showSamplePreview) : (showSamplePreview ? 'Close' : 'Sample')}
             </button>
             <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-purple-950/80 border border-purple-500/50 text-purple-300">
               {isGuest 
                 ? (userTokens > 0 ? t.omikuji.guestFreeBadge : t.omikuji.guestExhaustedBadge) 
-                : t.omikuji.tokensLeft(userTokens)}
+                : (typeof t.omikuji.tokensLeft === 'function' ? t.omikuji.tokensLeft(userTokens) : `${userTokens} Tokens Left`)}
             </span>
           </div>
         </div>
@@ -475,7 +477,7 @@ export default function OmikujiView({
             </div>
             <div className="p-2.5 bg-black/50 rounded-xl border border-white/5 space-y-1">
               <span className="text-[10px] font-bold text-amber-400 block">
-                ✦ {t.omikuji.sampleAnswerTitle(spotInfo?.worldName || activeSpot?.worldName || "")}
+                ✦ {typeof t.omikuji.sampleAnswerTitle === 'function' ? t.omikuji.sampleAnswerTitle(spotInfo?.worldName || activeSpot?.worldName || "") : "Guide Persona"}
               </span>
               <p className="text-gray-300 text-[11px] leading-relaxed">
                 "{t.omikuji.sampleAnswer}"
@@ -557,7 +559,9 @@ export default function OmikujiView({
               className="w-full bg-gray-950/80 border border-gray-700/80 rounded-2xl p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-400 transition resize-none"
             />
             <div className="flex justify-between items-center">
-              <span className="text-[10px] text-gray-500">{t.omikuji.charCount(userContext.length, 300)}</span>
+              <span className="text-[10px] text-gray-500">
+                {typeof t.omikuji.charCount === 'function' ? t.omikuji.charCount(userContext.length, 300) : `${userContext.length} / 300`}
+              </span>
               <button
                 onClick={() => onInterpret(userContext)}
                 disabled={isInterpreting || !userContext.trim()}

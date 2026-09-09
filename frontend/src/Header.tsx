@@ -43,7 +43,7 @@ export default function Header({
   onReturnToRift,
   onAdminTeleport
 }: HeaderProps) {
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage, t, getSpotTranslation } = useLanguage();
   const [isAudioMuted, setIsAudioMuted] = useState(AudioEngine.isMuted());
   const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState(false);
   const [adminPasscode, setAdminPasscode] = useState('');
@@ -70,8 +70,8 @@ export default function Header({
           if (res.ok) {
             showToast({
               type: 'success',
-              title: '✨ 12대 세계관 점괘 DB 갱신 완료',
-              message: '84종의 세계관 맞춤형 오미쿠지 데이터가 완벽하게 동기화되었습니다.'
+              title: language === 'en' ? '✨ 12 Multiverse Lore DB Refreshed' : language === 'ja' ? '✨ 12次元おみくじDB更新完了' : '✨ 12대 세계관 점괘 DB 갱신 완료',
+              message: language === 'en' ? '84 custom fortune texts synchronized with database.' : language === 'ja' ? '84種の次元おみくじデータが同期されました。' : '84종의 세계관 맞춤형 오미쿠지 데이터가 완벽하게 동기화되었습니다.'
             });
             return;
           }
@@ -81,8 +81,8 @@ export default function Header({
       // Standalone Success
       showToast({
         type: 'success',
-        title: '✨ 12대 세계관 로컬 데이터 준비 완료',
-        message: '84종의 세계관 맞춤형 오미쿠지 데이터가 로컬에 완벽히 로드되어 있습니다.'
+        title: language === 'en' ? '✨ Multiverse Local Lore Ready' : language === 'ja' ? '✨ 次元ローカルデータ準備完了' : '✨ 12대 세계관 로컬 데이터 준비 완료',
+        message: language === 'en' ? '84 custom lore datasets fully loaded locally.' : language === 'ja' ? '84種の次元おみくじデータがローカルにロードされています。' : '84종의 세계관 맞춤형 오미쿠지 데이터가 로컬에 완벽히 로드되어 있습니다.'
       });
     } catch (e) {
       console.error(e);
@@ -107,8 +107,8 @@ export default function Header({
       setIsAdmin(false);
       showToast({
         type: 'info',
-        title: '관리자 모드 해제',
-        message: '일반 시공간 탐험가 모드로 복귀했습니다.'
+        title: language === 'en' ? 'Admin Mode Disabled' : language === 'ja' ? '管理者モード解除' : '관리자 모드 해제',
+        message: language === 'en' ? 'Returned to regular spacetime traveler mode.' : language === 'ja' ? '一般の時空探索者モードに復帰しました。' : '일반 시공간 탐험가 모드로 복귀했습니다.'
       });
     } else {
       setAdminPasscode('');
@@ -123,14 +123,14 @@ export default function Header({
       setIsAdminAuthModalOpen(false);
       showToast({
         type: 'success',
-        title: '⚡ 관리자 권한 승인',
-        message: '시공간 관리국 마스터 키가 인증되었습니다.\n즉시 텔레포트 및 치트가 활성화됩니다.'
+        title: language === 'en' ? '⚡ Administrator Authorized' : language === 'ja' ? '⚡ 管理者権限承認' : '⚡ 관리자 권한 승인',
+        message: language === 'en' ? 'Spacetime Authority Master Key verified.\nInstant teleport & cheats activated.' : language === 'ja' ? '時空管理局マスターキーが認証されました。\n即時テレポートが有効化されました。' : '시공간 관리국 마스터 키가 인증되었습니다.\n즉시 텔레포트 및 치트가 활성화됩니다.'
       });
     } else {
       showToast({
         type: 'error',
-        title: '인증 실패',
-        message: '마스터 패스키가 일치하지 않습니다.'
+        title: language === 'en' ? 'Auth Failed' : language === 'ja' ? '認証失敗' : '인증 실패',
+        message: language === 'en' ? 'Master passkey does not match.' : language === 'ja' ? 'マスターパスキーが一致しません。' : '마스터 패스키가 일치하지 않습니다.'
       });
     }
   };
@@ -316,17 +316,17 @@ export default function Header({
                 )}
                 <div className="flex flex-col text-left">
                   <span className="text-[11px] font-bold text-purple-200 max-w-[80px] truncate leading-tight">
-                    {userState?.display_name || userState?.email?.split('@')[0] || "회원"}
+                    {userState?.display_name || userState?.email?.split('@')[0] || (language === 'en' ? 'Traveler' : language === 'ja' ? '会員' : '회원')}
                   </span>
                   <span className="text-[9px] text-purple-300 font-semibold flex items-center gap-1">
-                    🔮 AI 풀이: <strong className="text-amber-300">{userState?.llm_tokens ?? 0}/1</strong>
+                    {language === 'en' ? '🔮 AI:' : language === 'ja' ? '🔮 AI解読:' : '🔮 AI 풀이:'} <strong className="text-amber-300">{userState?.llm_tokens ?? 0}/1</strong>
                     {tokenTimeLeft > 0 && ` (${formatTime(tokenTimeLeft)})`}
                   </span>
                 </div>
                 <button
                   onClick={onGoogleLogout}
                   className="text-[10px] text-gray-400 hover:text-red-300 ml-1 p-1 hover:bg-white/5 rounded transition"
-                  title="로그아웃"
+                  title={t.header.logout}
                 >
                   ✕
                 </button>
@@ -342,7 +342,9 @@ export default function Header({
                   : 'bg-black/40 border-white/10 text-gray-400 hover:text-gray-200'
               }`}
             >
-              {isAdmin ? "⚡ 관리자 ON" : "관리자"}
+              {isAdmin 
+                ? (language === 'en' ? "⚡ Admin ON" : language === 'ja' ? "⚡ 管理者 ON" : "⚡ 관리자 ON") 
+                : (language === 'en' ? "Admin" : language === 'ja' ? "管理者" : "관리자")}
             </button>
           </div>
         </div>
@@ -352,7 +354,7 @@ export default function Header({
           <div className="mt-3 pt-3 border-t border-red-500/30 flex flex-wrap items-center justify-between gap-2 bg-red-950/40 p-2.5 rounded-2xl border border-red-500/20">
             <div className="flex items-center space-x-2 text-xs font-bold text-red-200">
               <span>⚡</span>
-              <span>[관리자] 시공간 즉시 텔레포터 (0초 Bypass):</span>
+              <span>{language === 'en' ? '[Admin] Instant Teleporter (0s Bypass):' : language === 'ja' ? '[管理者] 即時テレポーター (0秒 Bypass):' : '[관리자] 시공간 즉시 텔레포터 (0초 Bypass):'}</span>
             </div>
             <div className="flex items-center gap-2 flex-1 max-w-md">
               <select
@@ -360,26 +362,31 @@ export default function Header({
                 onChange={(e) => setAdminSelectedSpot(Number(e.target.value))}
                 className="flex-1 bg-black/80 border border-red-500/40 text-red-100 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-red-400"
               >
-                <option value={0}>⛩️ [성소] 차원의 균열 (로비 귀환)</option>
-                {SPOTS.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.locationName} ({s.worldName}) {s.id === userState?.current_spot_id ? "(현재 위치)" : ""}
-                  </option>
-                ))}
+                <option value={0}>{language === 'en' ? '⛩️ [Sanctuary] Dimensional Rift (Return)' : language === 'ja' ? '⛩️ [聖所] 次元の狭間 (ロビー帰還)' : '⛩️ [성소] 차원의 균열 (로비 귀환)'}</option>
+                {SPOTS.map((s) => {
+                  const sInfo = getSpotTranslation(s.id);
+                  return (
+                    <option key={s.id} value={s.id}>
+                      {sInfo.locationName} ({sInfo.worldName}) {s.id === userState?.current_spot_id ? (language === 'en' ? '(Current)' : language === 'ja' ? '(現在地)' : '(현재 위치)') : ''}
+                    </option>
+                  );
+                })}
               </select>
               <button
                 onClick={() => onAdminTeleport && onAdminTeleport(adminSelectedSpot)}
                 className="bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-extrabold text-xs px-3.5 py-1.5 rounded-xl shadow-md transition active:scale-95 whitespace-nowrap"
               >
-                순간이동 🚀
+                {language === 'en' ? 'Teleport 🚀' : language === 'ja' ? 'テレポート 🚀' : '순간이동 🚀'}
               </button>
               <button
                 onClick={handleReseed}
                 disabled={isReseeding}
-                title="12대 세계관 맞춤형 오미쿠지 84종을 DB에 즉시 갱신합니다."
+                title={language === 'en' ? 'Refresh 84 multiverse fortune lore data into DB.' : language === 'ja' ? '12次元84種のおみくじデータを即時DB更新します。' : '12대 세계관 맞춤형 오미쿠지 84종을 DB에 즉시 갱신합니다.'}
                 className="bg-purple-900/80 hover:bg-purple-800 border border-purple-400/40 text-purple-200 font-extrabold text-xs px-3 py-1.5 rounded-xl shadow-md transition active:scale-95 whitespace-nowrap"
               >
-                {isReseeding ? "동기화 중..." : "점괘 DB 동기화 🔄"}
+                {isReseeding 
+                  ? (language === 'en' ? 'Syncing...' : language === 'ja' ? '同期中...' : '동기화 중...') 
+                  : (language === 'en' ? 'Sync Lore DB 🔄' : language === 'ja' ? 'おみくじDB同期 🔄' : '점괘 DB 동기화 🔄')}
               </button>
             </div>
           </div>
@@ -393,7 +400,7 @@ export default function Header({
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black text-red-300 flex items-center gap-2">
                 <span>🔐</span>
-                <span>시공간 관리국 마스터 인증</span>
+                <span>{language === 'en' ? 'Spacetime Authority Master Auth' : language === 'ja' ? '時空管理局マスター認証' : '시공간 관리국 마스터 인증'}</span>
               </h3>
               <button 
                 onClick={() => setIsAdminAuthModalOpen(false)}
@@ -404,13 +411,13 @@ export default function Header({
             </div>
             
             <p className="text-xs text-gray-300 leading-relaxed">
-              관리자 모드 활성화를 위해 마스터 패스키를 입력하세요.
+              {language === 'en' ? 'Enter master passkey to activate administrator mode.' : language === 'ja' ? '管理者モードを有効化するためマスターパスキーを入力してください。' : '관리자 모드 활성화를 위해 마스터 패스키를 입력하세요.'}
             </p>
 
             <form onSubmit={handleAdminAuthSubmit} className="flex flex-col space-y-3">
               <input 
                 type="password"
-                placeholder="마스터 패스키 (예: 486)"
+                placeholder={language === 'en' ? 'Master Passkey (e.g. 486)' : language === 'ja' ? 'マスターパスキー (例: 486)' : '마스터 패스키 (예: 486)'}
                 value={adminPasscode}
                 onChange={(e) => setAdminPasscode(e.target.value)}
                 autoFocus
@@ -422,13 +429,13 @@ export default function Header({
                   onClick={() => setIsAdminAuthModalOpen(false)}
                   className="px-3.5 py-2 rounded-xl text-xs font-bold text-gray-400 hover:bg-white/5 transition"
                 >
-                  취소
+                  {language === 'en' ? 'Cancel' : language === 'ja' ? 'キャンセル' : '취소'}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 rounded-xl text-xs font-extrabold bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white shadow-lg transition active:scale-95"
                 >
-                  권한 승인 ⚡
+                  {language === 'en' ? 'Authorize ⚡' : language === 'ja' ? '権限承認 ⚡' : '권한 승인 ⚡'}
                 </button>
               </div>
             </form>

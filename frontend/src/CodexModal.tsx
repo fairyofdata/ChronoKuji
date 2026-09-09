@@ -49,7 +49,9 @@ export default function CodexModal({ isOpen, onClose, collectedItems = [], isCom
         <div className="p-4 bg-black/40 border-b border-gray-800 flex flex-col space-y-2">
           <div className="flex justify-between items-center text-xs">
             <span className="text-gray-300 font-bold">{t.codex.progress}</span>
-            <span className="text-amber-400 font-extrabold">{t.codex.collectedCount(collectedCount, 11)}</span>
+            <span className="text-amber-400 font-extrabold">
+              {typeof t.codex.collectedCount === 'function' ? t.codex.collectedCount(collectedCount, 11) : `${collectedCount} / 11 Collected`}
+            </span>
           </div>
           <div className="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden">
             <div 

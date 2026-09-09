@@ -21,7 +21,7 @@ import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 import './App.css';
 
 function AppContent() {
-  const { language } = useLanguage();
+  const { language, getSpotTranslation } = useLanguage();
   const [userId, setUserId] = useState<string | null>(() => localStorage.getItem('omikuz_user_id'));
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
@@ -78,6 +78,16 @@ function AppContent() {
 
   // 2. Fetch User State Helper
   const fetchUserState = async (uid: string) => {
+    const checkStateAndSync = (state: UserState) => {
+      // 이미 도착 시간이 지난 이동 중 상태라면 즉시 도착 해결
+      if (state.target_spot_id !== null && state.target_spot_id !== undefined && !state.current_spot_id) {
+        const arrMs = state.arrival_time ? parseUtcDate(state.arrival_time) : 0;
+        if (!arrMs || arrMs <= Date.now() || state.is_arrived) {
+          setTimeout(() => handleArrive(), 100);
+        }
+      }
+    };
+
     try {
       if (API_BASE_URL) {
         const res = await fetch(`${API_BASE_URL}/api/v1/users/state`, {
@@ -86,6 +96,7 @@ function AppContent() {
         if (res.ok) {
           const state: UserState = await res.json();
           setUserState(state);
+          checkStateAndSync(state);
 
           // BGM synchronization
           if (hasUnlockedAudio.current) {
@@ -107,6 +118,8 @@ function AppContent() {
     // Client-First Standalone Fallback
     const localState = LocalGameService.getUserState(uid);
     setUserState(localState);
+    checkStateAndSync(localState);
+
     if (hasUnlockedAudio.current) {
       if (localState.target_spot_id !== null && localState.target_spot_id !== undefined && !localState.is_arrived) {
         AudioEngine.playTravelMusic();
@@ -182,16 +195,20 @@ function AppContent() {
       if (user) {
         showToast({
           type: 'success',
-          title: '🔑 로그인 성공',
-          message: `${user.displayName || '여행자'}님 환영합니다!\n20시간마다 1회 무료 AI 심층 풀이가 충전됩니다.`
+          title: language === 'en' ? '🔑 Login Successful' : language === 'ja' ? '🔑 ログイン成功' : '🔑 로그인 성공',
+          message: language === 'en'
+            ? `Welcome ${user.displayName || 'Traveler'}!\n1 free AI deep interpretation refills every 20 hours.`
+            : language === 'ja'
+            ? `ようこそ ${user.displayName || '旅人'}様！\n20時間ごとに1回無料のAI深層解読がチャージされます。`
+            : `${user.displayName || '여행자'}님 환영합니다!\n20시간마다 1회 무료 AI 심층 풀이가 충전됩니다.`
         });
       }
     } catch (e: any) {
       if (e?.code !== 'auth/popup-closed-by-user') {
         showToast({
           type: 'error',
-          title: '로그인 실패',
-          message: e?.message || "구글 로그인 중 오류가 발생했습니다."
+          title: language === 'en' ? 'Login Failed' : language === 'ja' ? 'ログイン失敗' : '로그인 실패',
+          message: e?.message || (language === 'en' ? "An error occurred during Google login." : language === 'ja' ? "Googleログイン中にエラーが発生しました。" : "구글 로그인 중 오류가 발생했습니다.")
         });
       }
     } finally {
@@ -221,8 +238,8 @@ function AppContent() {
 
       showToast({
         type: 'info',
-        title: '로그아웃 완료',
-        message: '게스트 모드로 전환되었습니다.'
+        title: language === 'en' ? 'Logged Out' : language === 'ja' ? 'ログアウト完了' : '로그아웃 완료',
+        message: language === 'en' ? 'Switched to guest mode.' : language === 'ja' ? 'ゲストモードに切り替わりました。' : '게스트 모드로 전환되었습니다.'
       });
     } catch (e) {
       console.error(e);
@@ -230,18 +247,21 @@ function AppContent() {
   };
 
   // 3. Spacetime Warp Timer (60s Countdown)
-  const hasWarpTickedRef = useRef<boolean>(false);
   useEffect(() => {
-    if (!userState?.arrival_time || userState?.is_arrived) {
+    // 이동 중이 아닌 경우 타이머 초기화
+    const isActuallyMoving = userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && !userState?.current_spot_id;
+    if (!isActuallyMoving) {
       setTimeLeft(0);
-      hasWarpTickedRef.current = false;
       return;
     }
 
-    const arrivalMs = parseUtcDate(userState.arrival_time);
-    if (!arrivalMs) {
+    const arrivalMs = userState?.arrival_time ? parseUtcDate(userState.arrival_time) : 0;
+    const now = Date.now();
+
+    // 이미 도착 시간이 지났거나 is_arrived 상태인데 current_spot_id가 아직 null인 경우 즉시 도착 확정
+    if (!arrivalMs || now >= arrivalMs || userState?.is_arrived) {
       setTimeLeft(0);
-      hasWarpTickedRef.current = false;
+      handleArrive();
       return;
     }
 
@@ -250,11 +270,7 @@ function AppContent() {
       const diff = Math.max(0, Math.ceil((arrivalMs - nowMs) / 1000));
       setTimeLeft(diff);
 
-      if (diff > 0) {
-        hasWarpTickedRef.current = true;
-      } else if (diff <= 0 && hasWarpTickedRef.current) {
-        // 실제로 카운트다운이 진행되어 0초에 도달했을 때만 도착 요청
-        hasWarpTickedRef.current = false;
+      if (diff <= 0) {
         handleArrive();
       }
     };
@@ -263,7 +279,7 @@ function AppContent() {
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [userState?.arrival_time, userState?.is_arrived, userId]);
+  }, [userState?.arrival_time, userState?.is_arrived, userState?.target_spot_id, userState?.current_spot_id, userId]);
 
   // 4. Token 20-Hour Refill Countdown Timer
   useEffect(() => {
@@ -385,15 +401,19 @@ function AppContent() {
 
       AudioEngine.playTravelMusic();
 
-      const targetSpotObj = SPOTS.find(s => s.id === targetId);
+      const targetSpotInfo = targetId === 0 ? null : getSpotTranslation(targetId);
       const destName = targetId === 0 
-        ? "차원의 균열 (성소)" 
-        : (targetSpotObj ? `${targetSpotObj.locationName} (${targetSpotObj.worldName})` : "목적지");
+        ? (language === 'en' ? "Dimensional Rift (Sanctuary)" : language === 'ja' ? "次元の狭間 (聖所)" : "차원의 균열 (성소)") 
+        : (targetSpotInfo ? `${targetSpotInfo.locationName} (${targetSpotInfo.worldName})` : (language === 'en' ? "Destination" : language === 'ja' ? "目的地" : "목적지"));
 
       showToast({
         type: 'info',
-        title: '⏳ 시공간 워프 개시',
-        message: `[${destName}]을(를) 향해 도약을 시작합니다. (60초 소요)`
+        title: language === 'en' ? '⏳ Spacetime Warp Initiated' : language === 'ja' ? '⏳ 時空ワープ開始' : '⏳ 시공간 워프 개시',
+        message: language === 'en'
+          ? `Initiating warp towards [${destName}]. (Takes 60s)`
+          : language === 'ja'
+          ? `[${destName}]へ向けて跳躍を開始します。(所要時間 60秒)`
+          : `[${destName}]을(를) 향해 도약을 시작합니다. (60초 소요)`
       });
     } catch (e) {
       console.error(e);
@@ -442,18 +462,22 @@ function AppContent() {
 
       if (arrivedSpotId) {
         AudioEngine.playSpotMusic(arrivedSpotId);
-        const spot = SPOTS.find(s => s.id === arrivedSpotId);
+        const arrivedSpotInfo = getSpotTranslation(arrivedSpotId);
         showToast({
           type: 'success',
-          title: '🎉 차원 진입 성공',
-          message: `[${spot?.locationName}] (${spot?.worldName})에 무사히 도착했습니다!`
+          title: language === 'en' ? '🎉 Dimensional Entry Complete' : language === 'ja' ? '🎉 次元突入完了' : '🎉 차원 진입 성공',
+          message: language === 'en'
+            ? `Safely arrived at [${arrivedSpotInfo.locationName}] (${arrivedSpotInfo.worldName})!`
+            : language === 'ja'
+            ? `[${arrivedSpotInfo.locationName}] (${arrivedSpotInfo.worldName})に無事到着しました！`
+            : `[${arrivedSpotInfo.locationName}] (${arrivedSpotInfo.worldName})에 무사히 도착했습니다!`
         });
       } else {
         AudioEngine.playLobbyMusic();
         showToast({
           type: 'shrine',
-          title: '⛩️ 성소 귀환 완료',
-          message: '차원의 균열 성소로 안전하게 귀환했습니다.'
+          title: language === 'en' ? '⛩️ Returned to Sanctuary' : language === 'ja' ? '⛩️ 聖所帰還完了' : '⛩️ 성소 귀환 완료',
+          message: language === 'en' ? 'Safely returned to the Dimensional Rift Sanctuary.' : language === 'ja' ? '次元の狭間の聖所に無事帰還しました。' : '차원의 균열 성소로 안전하게 귀환했습니다.'
         });
       }
     } catch (e) {
@@ -530,18 +554,22 @@ function AppContent() {
 
       if (data.current_spot_id) {
         AudioEngine.playSpotMusic(data.current_spot_id);
-        const spot = SPOTS.find(s => s.id === data.current_spot_id);
+        const adminSpotInfo = getSpotTranslation(data.current_spot_id);
         showToast({
           type: 'success',
-          title: '⚡ 관리자 텔레포트 성공',
-          message: `[${spot?.locationName}] (${spot?.worldName})로 대기 없이 즉시 도약했습니다!`
+          title: language === 'en' ? '⚡ Admin Teleport Success' : language === 'ja' ? '⚡ 管理者テレポート成功' : '⚡ 관리자 텔레포트 성공',
+          message: language === 'en'
+            ? `Instantly jumped to [${adminSpotInfo.locationName}] (${adminSpotInfo.worldName})!`
+            : language === 'ja'
+            ? `[${adminSpotInfo.locationName}] (${adminSpotInfo.worldName})へ即時跳躍しました！`
+            : `[${adminSpotInfo.locationName}] (${adminSpotInfo.worldName})로 대기 없이 즉시 도약했습니다!`
         });
       } else {
         AudioEngine.playLobbyMusic();
         showToast({
           type: 'shrine',
-          title: '⛩️ 성소 즉시 귀환',
-          message: '차원의 균열 성소로 즉시 귀환했습니다.'
+          title: language === 'en' ? '⛩️ Instant Sanctuary Return' : language === 'ja' ? '⛩️ 聖所即時帰還' : '⛩️ 성소 즉시 귀환',
+          message: language === 'en' ? 'Instantly returned to the Dimensional Rift Sanctuary.' : language === 'ja' ? '次元の狭間の聖所へ即時帰還しました。' : '차원의 균열 성소로 즉시 귀환했습니다.'
         });
       }
     } catch (e) {
@@ -601,11 +629,9 @@ function AppContent() {
   // 9. AI Counseling Interpretation Handler
   const handleInterpret = async (context: string) => {
     if (!userId || !omikujiResult) return;
-    
     setIsInterpreting(true);
-
     try {
-      let data: LlmInterpretationResult | null = null;
+      let data: any = null;
       if (API_BASE_URL && !userState?.is_guest) {
         try {
           const res = await fetch(`${API_BASE_URL}/api/v1/interpret/${omikujiResult.history_id}`, {
@@ -631,8 +657,8 @@ function AppContent() {
       setLlmResult(data);
       showToast({
         type: 'success',
-        title: '🔮 AI 심층 해석 완료',
-        message: '세계관 페르소나의 맞춤 조언이 완성되었습니다.'
+        title: language === 'en' ? '🔮 AI Deep Interpretation Ready' : language === 'ja' ? '🔮 AI深層解読完了' : '🔮 AI 심층 해석 완료',
+        message: language === 'en' ? 'Personalized cosmic advice crafted by the world persona.' : language === 'ja' ? '世界観ペルソナの特製助言が完成しました。' : '세계관 페르소나의 맞춤 조언이 완성되었습니다.'
       });
     } catch (e) {
       console.error(e);
@@ -645,6 +671,7 @@ function AppContent() {
   const currentSpot = userState?.current_spot_id 
     ? SPOTS.find(s => s.id === userState.current_spot_id) 
     : null;
+  const currentSpotInfo = currentSpot ? getSpotTranslation(currentSpot.id) : null;
 
   const isMoving = userState?.target_spot_id !== null && userState?.target_spot_id !== undefined && !userState?.current_spot_id;
 
@@ -656,25 +683,26 @@ function AppContent() {
     <div className="min-h-screen w-full relative overflow-x-hidden text-white flex flex-col font-sans select-none">
       {/* 1. Fullscreen Cinematic Vivid Artwork Canvas */}
       <div 
-        className="fixed inset-0 z-0 bg-cover bg-center transition-all duration-1000 ease-in-out filter brightness-90"
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 transform scale-105 filter brightness-75 contrast-105"
         style={{ backgroundImage: `url(${bgImageSrc})` }}
       />
-      {/* Subtle Cinematic Vignette */}
-      <div className="fixed inset-0 z-0 bg-gradient-to-t from-gray-950 via-transparent to-gray-950/80 pointer-events-none" />
+      
+      {/* Dynamic Ambient Color Mesh Overlay */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 pointer-events-none" />
 
-      {/* 2. Top Header Navigation */}
+      {/* 2. Top Glassmorphic Navigation Header */}
       <Header 
         userState={userState}
+        tokenTimeLeft={tokenTimeLeft}
         isAdmin={isAdmin}
         setIsAdmin={setIsAdmin}
-        tokenTimeLeft={tokenTimeLeft}
+        isZenMode={isZenMode}
+        setIsZenMode={setIsZenMode}
         onOpenCodex={() => setIsCodexModalOpen(true)}
         onOpenHistory={() => setIsHistoryModalOpen(true)}
         onOpenStats={() => setIsStatsModalOpen(true)}
         codexCount={collectedItems.length}
         isCodexComplete={isCodexComplete}
-        isZenMode={isZenMode}
-        setIsZenMode={setIsZenMode}
         onGoogleLogin={handleGoogleLogin}
         onGoogleLogout={handleGoogleLogout}
         isLoggingIn={isLoggingIn}
@@ -705,13 +733,17 @@ function AppContent() {
               {!omikujiResult && (
                 <div className="w-full max-w-2xl mx-auto p-6 sm:p-8 rounded-3xl backdrop-blur-2xl bg-black/55 border border-purple-500/30 shadow-2xl flex flex-col items-center text-center space-y-4">
                   <span className="text-xs font-bold text-purple-300 tracking-wider uppercase">
-                    {currentSpot?.worldName} • 神社
+                    {currentSpotInfo?.worldName || currentSpot?.worldName} • 神社
                   </span>
                   <h2 className="text-xl sm:text-3xl font-black text-white drop-shadow">
-                    {currentSpot?.locationName}
+                    {currentSpotInfo?.locationName || currentSpot?.locationName}
                   </h2>
                   <p className="text-xs sm:text-sm text-gray-300 max-w-md leading-relaxed">
-                    이곳의 시공간 에너지가 응축되어 있습니다. 운명의 산통을 흔들어 오늘의 차원 점괘를 확인하세요!
+                    {language === 'en' 
+                      ? 'The spacetime energy here is deeply condensed. Shake the sacred cylinder to reveal your dimensional fortune!'
+                      : language === 'ja'
+                      ? 'この地の時空エネルギーが凝縮されています。神籤筒を振って本日の次元おみくじを引きましょう！'
+                      : '이곳의 시공간 에너지가 응축되어 있습니다. 운명의 산통을 흔들어 오늘의 차원 점괘를 확인하세요!'}
                   </p>
 
                   <button
@@ -724,7 +756,12 @@ function AppContent() {
                     }`}
                   >
                     <span>🥠</span>
-                    <span>{isDrawing ? "점괘 뽑는 중..." : "운명의 산통 흔들기 (점괘 뽑기)"}</span>
+                    <span>
+                      {isDrawing 
+                        ? (language === 'en' ? "Revealing Fortune..." : language === 'ja' ? "神籤を引いています..." : "점괘 뽑는 중...")
+                        : (language === 'en' ? "Shake Sacred Cylinder (Draw Fortune)" : language === 'ja' ? "神籤筒を振る (おみくじを引く)" : "운명의 산통 흔들기 (점괘 뽑기)")
+                      }
+                    </span>
                   </button>
                 </div>
               )}
@@ -768,14 +805,18 @@ function AppContent() {
               <div className="p-5 sm:p-6 rounded-3xl backdrop-blur-xl bg-black/45 border border-white/10 flex flex-col items-center gap-4">
                 <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-3">
                   <div className="text-left">
-                    <span className="text-[11px] text-gray-400 font-bold block">멀티버스 시공간 워프</span>
-                    <span className="text-xs sm:text-sm text-gray-200 font-bold">성소로 귀환하거나 새로운 차원으로 도약하세요</span>
+                    <span className="text-[11px] text-gray-400 font-bold block">
+                      {language === 'en' ? 'Multiverse Spacetime Warp' : language === 'ja' ? 'マルチバース時空ワープ' : '멀티버스 시공간 워프'}
+                    </span>
+                    <span className="text-xs sm:text-sm text-gray-200 font-bold">
+                      {language === 'en' ? 'Return to the sanctuary or warp to a new dimension' : language === 'ja' ? '聖所に帰還するか、新たな次元へ跳躍しましょう' : '성소로 귀환하거나 새로운 차원으로 도약하세요'}
+                    </span>
                   </div>
                   <button
                     onClick={() => handleMoveStart(0)}
                     className="text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl bg-purple-900/60 hover:bg-purple-800 border border-purple-500/50 text-purple-200 transition shadow whitespace-nowrap active:scale-95"
                   >
-                    ⛩️ 성소로 귀환 (60초)
+                    {language === 'en' ? '⛩️ Return to Sanctuary (60s)' : language === 'ja' ? '⛩️ 聖所に帰還 (60秒)' : '⛩️ 성소로 귀환 (60초)'}
                   </button>
                 </div>
 
@@ -801,7 +842,7 @@ function AppContent() {
         isOpen={isCodexModalOpen}
         onClose={() => setIsCodexModalOpen(false)}
         collectedItems={collectedItems}
-        isCodexComplete={isCodexComplete}
+        isComplete={isCodexComplete}
       />
 
       <HistoryModal 
@@ -826,7 +867,7 @@ function AppContent() {
           isOpen={isShareModalOpen}
           onClose={() => setIsShareModalOpen(false)}
           result={omikujiResult}
-          spot={currentSpot || undefined}
+          spotId={currentSpot?.id || 1}
         />
       )}
 

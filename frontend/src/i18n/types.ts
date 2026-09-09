@@ -54,6 +54,30 @@ export interface Translations {
     earlyArrival: string;
     adminSkip: string;
     calibrationLog: string[];
+    // Extended properties used by MovementTimer
+    sanctuaryRift: string;
+    spacetimeLogs: string[];
+    jumpingTo: string;
+    brakeCanvasHint: string;
+    warpProgress: string;
+    seconds: string;
+    brakedBadge: string;
+    cruisingHint: string;
+    arrivingSoon: string;
+    regenBrakingTitle: string;
+    absorbingEnergy: string;
+    regenBrakingButton: string;
+    regenBrakingSpeed: string;
+    regenBrakingDesc: string;
+    phase1: string;
+    phase2: string;
+    phase3: string;
+    phase4: string;
+    phase1Desc: (world: string) => string;
+    phase2Desc: (item: string) => string;
+    phase3Desc: (loc: string) => string;
+    phase4Desc: (loc: string) => string;
+    adminInstant: string;
   };
   omikuji: {
     shrineTitle: string;
@@ -81,7 +105,7 @@ export interface Translations {
     tyingFortune: string;
     tiedComplete: string;
     tiedToast: string;
-    aiTitle: string;
+    aiTitle: (world?: string) => string;
     samplePrompt: string;
     sampleClose: string;
     guestWelcomeBonus: string;
@@ -95,6 +119,38 @@ export interface Translations {
     feedbackNeedsWork: string;
     feedbackHelpfulToast: string;
     feedbackNeedsWorkToast: string;
+    // Extended properties used by OmikujiView
+    gradeLabel: string;
+    luckyItemLabel: string;
+    overallTitle: string;
+    tiedBanner: string;
+    spotSubtitle: string;
+    greatLuckCheer: string;
+    purifiedWarn: string;
+    badLuckWarn: string;
+    peacefulCheer: string;
+    poemTitle: (world: string) => string;
+    saveCardPng: string;
+    tieBadLuck: string;
+    tyingBadLuck: string;
+    sampleToggle: (isOpen: boolean) => string;
+    guestFreeBadge: string;
+    guestExhaustedBadge: string;
+    tokensLeft: (tokens: number) => string;
+    sampleQuestion: string;
+    sampleAnswerTitle: (world: string) => string;
+    sampleAnswer: string;
+    guestWelcomeBenefit: string;
+    counselingDesc: string;
+    counselingPlaceholder: string;
+    charCount: (current: number, max: number) => string;
+    interpretingAi: string;
+    requestAiButtonFree: string;
+    requestAiButton: string;
+    loginPromptDesc: string;
+    loginGoogleButton: string;
+    exhaustedMemberTitle: string;
+    exhaustedMemberDesc: string;
   };
   codex: {
     title: string;
@@ -105,6 +161,11 @@ export interface Translations {
     acquiredOn: string;
     undiscovered: string;
     close: string;
+    // Extended properties used by CodexModal
+    collectedCount: (collected: number, total: number) => string;
+    hiddenLockedNotice: string;
+    unknownTreasure: string;
+    drawToCollect: string;
   };
   history: {
     title: string;
@@ -113,6 +174,12 @@ export interface Translations {
     drawnAt: string;
     viewAiInterpretation: string;
     close: string;
+    // Extended properties used by HistoryModal
+    loading: string;
+    emptyTitle: string;
+    emptyDesc: string;
+    myQuestion: string;
+    aiInterpretation: string;
   };
   stats: {
     title: string;
@@ -130,6 +197,21 @@ export interface Translations {
     architectureTitle: string;
     architectureDesc: string;
     close: string;
+    // Extended properties used by ObservatoryStatsModal
+    loading: string;
+    totalTravelers: string;
+    totalFortunes: string;
+    totalAi: string;
+    satisfaction: string;
+    luckDistributionTitle: string;
+    luckDistributionSubtitle: string;
+    spotPopularityTitle: string;
+    spotPopularitySubtitle: string;
+    visitsCount: (n: number) => string;
+    archHighlightTitle: string;
+    archHighlightDesc: string;
+    failedToLoad: string;
+    closeButton: string;
   };
   spots: Record<number, SpotTranslation>;
 }
