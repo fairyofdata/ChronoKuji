@@ -179,23 +179,18 @@ export default function OmikujiShakerModal({ spot, luckLevel, onComplete }: Omik
             {/* Paper Header */}
             <div className="border-b-2 border-dashed border-gray-400/70 pb-3 w-full text-center">
               <span className="text-[10px] text-gray-500 font-mono tracking-widest block mb-0.5">
-                CHRONO • {language === 'en' ? `No. ${fortuneNumber}` : language === 'ja' ? `第${fortuneNumber}番` : `제 ${fortuneNumber} 번`}
+                CHRONO OMIKUJI • 第{fortuneNumber}番
               </span>
               <h3 className="text-base font-extrabold text-gray-800 tracking-wider">
-                {spot?.worldName} {language === 'en' ? 'Fortune' : language === 'ja' ? '御神籤' : '점괘'}
+                {spot?.worldName} 御神籤
               </h3>
             </div>
 
             {/* Grand Stamp Seal (쾅 찍히는 낙관 인장) */}
             <div className="py-3">
               <div className={`w-24 h-24 rounded-2xl border-4 flex flex-col items-center justify-center font-black tracking-widest shadow-lg transform rotate-[-4deg] animate-stamp ${getSealColor(luckLevel)}`}>
-                <span className="text-3xl font-serif">{luckLevel}</span>
-                {language !== 'ja' && (
-                  <span className="text-[10px] font-sans font-bold tracking-tight">
-                    {getLocalizedLuckName(luckLevel, language)}
-                  </span>
-                )}
-                <span className="text-[8px] font-sans tracking-tight uppercase opacity-75">FATE SEAL</span>
+                <span className="text-4xl font-serif">{luckLevel}</span>
+                <span className="text-[9px] font-sans tracking-tight uppercase mt-0.5">FATE SEAL</span>
               </div>
             </div>
 

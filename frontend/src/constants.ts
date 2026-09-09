@@ -338,5 +338,5 @@ export function getLocalizedLuckDisplay(level: string, lang: 'ko' | 'en' | 'ja' 
   if (lang === 'ja') return level;
   const item = LUCK_LEVEL_NAMES[level];
   if (!item) return level;
-  return `${item[lang]} (${level})`;
+  return `${level} (${item[lang]})`;
 }

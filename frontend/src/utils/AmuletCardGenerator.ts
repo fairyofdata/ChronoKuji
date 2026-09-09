@@ -42,7 +42,7 @@ export async function generateAmuletCardImage({
     ? 'CHRONO KUJI • MULTIVERSE OMIKUJI' 
     : language === 'ja' 
     ? 'CHRONO KUJI • 次元神籤' 
-    : 'CHRONO KUJI • 차원 점괘';
+    : 'CHRONO KUJI • 차원 오미쿠지';
 
   const itemBoxTitle = language === 'en'
     ? '✨ Lucky Multiverse Item'

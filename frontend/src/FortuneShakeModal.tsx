@@ -114,7 +114,7 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
             }`}
           >
             <span className="text-[10px] font-black text-amber-950 font-serif writing-vertical tracking-widest">
-              {language === 'en' ? `#${fortuneNumber}` : language === 'ja' ? `第${fortuneNumber}番` : `제 ${fortuneNumber} 번`}
+              第{fortuneNumber}番
             </span>
           </div>
 
@@ -158,18 +158,16 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
             <div className="w-52 h-64 bg-[#fbf8ee] text-gray-950 rounded-2xl shadow-2xl border-2 border-amber-300 p-4 flex flex-col items-center justify-between animate-unfold relative overflow-hidden font-serif">
               <div className="border-b border-gray-300 pb-1.5 w-full text-center">
                 <span className="text-[9px] font-mono text-gray-500 block">
-                  CHRONO • {language === 'en' ? `No. ${fortuneNumber}` : language === 'ja' ? `第${fortuneNumber}番` : `제 ${fortuneNumber} 번`}
+                  CHRONO • 第{fortuneNumber}番
                 </span>
                 <span className="text-xs font-bold text-gray-800">
-                  {spotInfo?.worldName || spot?.worldName} {language === 'en' ? 'Fortune' : language === 'ja' ? '御神籤' : '점괘'}
+                  {spotInfo?.worldName || spot?.worldName} 御神籤
                 </span>
               </div>
 
               <div className="py-2">
                 <div className="w-20 h-20 rounded-2xl border-4 border-red-600 bg-red-950/10 flex flex-col items-center justify-center font-black tracking-widest text-red-600 shadow-md transform rotate-[-3deg] animate-stamp">
-                  <span className="text-2xl font-serif">
-                    {language === 'en' ? 'FATE' : language === 'ja' ? '神籤' : '점괘'}
-                  </span>
+                  <span className="text-3xl font-serif">神籤</span>
                   <span className="text-[8px] font-sans font-bold">FATE SEAL</span>
                 </div>
               </div>

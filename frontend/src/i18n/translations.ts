@@ -90,12 +90,12 @@ export const TRANSLATIONS: Record<Language, Translations> = {
       poeticVerse: '✦ Spacetime Poetic Verse ✦',
       overallFortune: '📜 Universal Fortune',
       categories: {
-        wish: 'Wish (願事)',
-        love: 'Love (戀愛)',
-        wealth: 'Wealth (金運)',
-        work: 'Work / Study (事業)',
-        travel: 'Travel (旅行)',
-        waiting: 'Awaited News (待人)'
+        wish: '願事 (Wish)',
+        love: '戀愛 (Love)',
+        wealth: '金運 (Wealth)',
+        work: '事業 (Work / Study)',
+        travel: '旅行 (Travel)',
+        waiting: '待人 (Awaited News)'
       },
       luckyDirection: 'Lucky Direction',
       luckyNumber: 'Lucky Number',
@@ -411,12 +411,12 @@ export const TRANSLATIONS: Record<Language, Translations> = {
       poeticVerse: '✦ 차원 운세 시(詩) ✦',
       overallFortune: '📜 차원의 총운',
       categories: {
-        wish: '소원 (願事)',
-        love: '인연 (戀愛)',
-        wealth: '재물 (金運)',
-        work: '학업·일 (事業)',
-        travel: '이동 (旅行)',
-        waiting: '기다림 (待人)'
+        wish: '願事 (소원)',
+        love: '戀愛 (인연)',
+        wealth: '金運 (재물)',
+        work: '事業 (학업·일)',
+        travel: '旅行 (이동)',
+        waiting: '待人 (기다림)'
       },
       luckyDirection: '행운의 방위',
       luckyNumber: '행운의 숫자',
