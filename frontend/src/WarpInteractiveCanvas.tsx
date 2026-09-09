@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useLanguage } from './i18n/LanguageContext';
 
 interface Particle {
   x: number;
@@ -45,6 +46,7 @@ interface WarpInteractiveCanvasProps {
 }
 
 export default function WarpInteractiveCanvas({ onBrake }: WarpInteractiveCanvasProps) {
+  const { language } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const onBrakeRef = useRef(onBrake);
   onBrakeRef.current = onBrake;
@@ -72,12 +74,28 @@ export default function WarpInteractiveCanvas({ onBrake }: WarpInteractiveCanvas
     const floatingTexts: FloatingText[] = [];
     const lightningArcs: LightningArc[] = [];
     const colors = ['#38bdf8', '#c084fc', '#facc15', '#34d399', '#f472b6', '#a78bfa'];
-    const brakePhrases = [
-      '⚡ 회생제동 -3s',
-      '⚡ 차원 파동 흡수 -3s',
-      '🔋 회생 코일 가동 -3s',
-      '🌀 감속 궤도 진입 -3s'
-    ];
+    
+    const brakePhrasesMap = {
+      en: [
+        '⚡ Regen Brake -3s',
+        '⚡ Flux Absorption -3s',
+        '🔋 Regen Coil Active -3s',
+        '🌀 Deceleration Orbit -3s'
+      ],
+      ja: [
+        '⚡ 回生ブレーキ -3s',
+        '⚡ 次元波動吸収 -3s',
+        '🔋 回生コイル稼働 -3s',
+        '🌀 減速軌道突入 -3s'
+      ],
+      ko: [
+        '⚡ 회생제동 -3s',
+        '⚡ 차원 파동 흡수 -3s',
+        '🔋 회생 코일 가동 -3s',
+        '🌀 감속 궤도 진입 -3s'
+      ]
+    };
+    const brakePhrases = brakePhrasesMap[language] || brakePhrasesMap.en;
 
     // 번개 아크 생성 함수
     const createLightning = (startX: number, startY: number) => {
@@ -287,13 +305,19 @@ export default function WarpInteractiveCanvas({ onBrake }: WarpInteractiveCanvas
       canvas.removeEventListener('mousedown', handlePointerDown);
       canvas.removeEventListener('touchstart', handlePointerDown);
     };
-  }, []);
+  }, [language]);
+
+  const canvasTitle = language === 'en'
+    ? 'Tap screen to trigger Spacetime Regenerative Warp Braking!'
+    : language === 'ja'
+    ? '画面をタップして時空回生ブレーキを作動させてください！'
+    : '화면을 탭하여 차원 도약 회생제동을 가동하세요!';
 
   return (
     <canvas
       ref={canvasRef}
       className="absolute inset-0 z-10 w-full h-full pointer-events-auto cursor-pointer select-none"
-      title="화면을 탭하여 차원 도약 회생제동을 가동하세요!"
+      title={canvasTitle}
     />
   );
 }

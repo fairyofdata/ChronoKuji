@@ -1,6 +1,6 @@
 import { UserState, OmikujiResult, FateHistoryItem, LlmInterpretationResult, CollectedCodexItem, ObservatoryStats } from '../types';
 import { SPOTS, CODEX_ITEMS } from '../constants';
-import { WORLD_OMIKUJI_LORE } from '../omikujiLore';
+import { getSpacetimeFortune, WORLD_OMIKUJI_LORE } from '../omikujiLore';
 import { API_BASE_URL } from '../config';
 
 const USER_STATE_KEY = 'chronokuji_user_state';
@@ -122,12 +122,34 @@ export class LocalGameService {
   }
 
   /**
-   * 오미쿠지 뽑기
+   * 오미쿠지 뽑기 (다국어 지원)
    */
-  static drawOmikuji(spotId: number): OmikujiResult {
+  static drawOmikuji(spotId: number, lang?: 'ko' | 'en' | 'ja'): OmikujiResult {
     const luckLevel = getRandomLuckLevel();
-    const worldLore = WORLD_OMIKUJI_LORE[spotId] || WORLD_OMIKUJI_LORE[2]; // 폴백: 물풍경
-    const fortune = worldLore[luckLevel] || worldLore["吉"];
+    const currentLang = (lang || (typeof localStorage !== 'undefined' ? localStorage.getItem('chronokuji_lang') : 'en') || 'en') as 'ko' | 'en' | 'ja';
+    
+    const fortune = getSpacetimeFortune(spotId, luckLevel, currentLang) || 
+      getSpacetimeFortune(2, luckLevel, currentLang) || {
+        poem: "The dimensional winds guide your steps through spacetime.",
+        text: "Fortune smiles upon this realm.",
+        categories: {
+          wish: "Follow your intuition.",
+          love: "Harmony approaches.",
+          wealth: "Steady growth.",
+          work: "Focus brings victory.",
+          travel: "Auspicious journeys.",
+          waiting: "News arrives soon."
+        }
+      };
+
+    const directions = currentLang === 'en'
+      ? ['East', 'West', 'South', 'North', 'South-East', 'North-East', 'South-West', 'North-West']
+      : currentLang === 'ja'
+      ? ['東', '西', '南', '北', '南東', '北東', '南西', '北西']
+      : ['동쪽', '서쪽', '남쪽', '북쪽', '동남쪽', '동북쪽', '서남쪽', '서북쪽'];
+    const dirSuffix = currentLang === 'en' ? ' Dimensional Wind' : currentLang === 'ja' ? 'の次元風' : ' 차원의 바람';
+    const randomDir = directions[Math.floor(Math.random() * directions.length)] + dirSuffix;
+    const randomNum = Math.floor(Math.random() * 99) + 1;
 
     const historyId = Date.now();
     const result: OmikujiResult = {
@@ -137,7 +159,9 @@ export class LocalGameService {
       original_text: fortune.text,
       meta_info: {
         poem: fortune.poem,
-        categories: fortune.categories
+        categories: fortune.categories,
+        lucky_direction: randomDir,
+        lucky_number: randomNum
       }
     };
 

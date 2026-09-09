@@ -1,20 +1,26 @@
 import { Spot } from '../types';
+import { SpotTranslation, Language } from '../i18n/types';
 
 interface GenerateAmuletOptions {
   spot: Spot;
   luckLevel: string;
   poem: string;
   overallText: string;
+  language?: Language;
+  spotInfo?: SpotTranslation;
 }
 
 /**
- * 1080x1920 해상도의 고품격 '차원 오미쿠지 부적' 포토카드 PNG 이미지를 생성합니다.
+ * Generates a high-definition 1080x1920 (9:16) PNG Amulet Photocard
+ * fully localized in English, Japanese, or Korean.
  */
 export async function generateAmuletCardImage({
   spot,
   luckLevel,
   poem,
-  overallText
+  overallText,
+  language = 'en',
+  spotInfo
 }: GenerateAmuletOptions): Promise<Blob> {
   const width = 1080;
   const height = 1920;
@@ -27,18 +33,39 @@ export async function generateAmuletCardImage({
     throw new Error('Canvas 2D context not available');
   }
 
-  // 1. 배경 이미지 로드 및 캔버스 채우기
+  const locationName = spotInfo?.locationName || spot.locationName;
+  const worldName = spotInfo?.worldName || spot.worldName;
+  const luckyItem = spotInfo?.luckyItem || spot.luckyItem;
+
+  const headerTitle = language === 'en' 
+    ? 'CHRONO KUJI • MULTIVERSE OMIKUJI' 
+    : language === 'ja' 
+    ? 'CHRONO KUJI • 次元神籤' 
+    : 'CHRONO KUJI • 차원 신초';
+
+  const itemBoxTitle = language === 'en'
+    ? '✨ Lucky Multiverse Item'
+    : language === 'ja'
+    ? '✨ 幸運の次元アイテム'
+    : '✨ 행운의 차원 아이템';
+
+  const footerPrompt = language === 'en'
+    ? 'Check your spacetime fortune now'
+    : language === 'ja'
+    ? '今すぐあなたの次元神籤を引こう'
+    : '지금 당신의 차원 점괘를 확인하세요';
+
+  // 1. Background image load & fill
   try {
     const bgImg = new Image();
     bgImg.crossOrigin = 'anonymous';
-    await new Promise((resolve, reject) => {
+    await new Promise((resolve) => {
       bgImg.onload = resolve;
-      bgImg.onerror = resolve; // 로드 실패 시에도 그라데이션으로 폴백
+      bgImg.onerror = resolve; // Graceful fallback
       bgImg.src = spot.bgImage;
     });
 
     if (bgImg.width > 0) {
-      // 비율 유지하며 캔버스 채우기
       const hRatio = canvas.width / bgImg.width;
       const vRatio = canvas.height / bgImg.height;
       const ratio = Math.max(hRatio, vRatio);
@@ -46,7 +73,6 @@ export async function generateAmuletCardImage({
       const centerShiftY = (canvas.height - bgImg.height * ratio) / 2;
       ctx.drawImage(bgImg, 0, 0, bgImg.width, bgImg.height, centerShiftX, centerShiftY, bgImg.width * ratio, bgImg.height * ratio);
     } else {
-      // 배경 로드 실패 시 심우주 그라데이션
       const grad = ctx.createLinearGradient(0, 0, 0, height);
       grad.addColorStop(0, '#090514');
       grad.addColorStop(0.5, '#1e0836');
@@ -62,14 +88,14 @@ export async function generateAmuletCardImage({
     ctx.fillRect(0, 0, width, height);
   }
 
-  // 2. 딥 비네트 및 어두운 오버레이
+  // 2. Deep vignette and dark atmosphere overlay
   const vignette = ctx.createRadialGradient(width / 2, height / 2, 200, width / 2, height / 2, width);
   vignette.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
   vignette.addColorStop(1, 'rgba(0, 0, 0, 0.92)');
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
 
-  // 3. 황금빛 엠보싱 테두리 프레임
+  // 3. Golden embossed ornamental frame
   const borderWidth = 32;
   const goldGrad = ctx.createLinearGradient(0, 0, width, height);
   goldGrad.addColorStop(0, '#fef08a');
@@ -82,12 +108,12 @@ export async function generateAmuletCardImage({
   ctx.lineWidth = 12;
   ctx.strokeRect(borderWidth, borderWidth, width - borderWidth * 2, height - borderWidth * 2);
 
-  // 내부 얇은 보조선
+  // Inner subtle accent line
   ctx.lineWidth = 2;
   ctx.strokeStyle = 'rgba(254, 240, 138, 0.4)';
   ctx.strokeRect(borderWidth + 16, borderWidth + 16, width - (borderWidth + 16) * 2, height - (borderWidth + 16) * 2);
 
-  // 4. 중앙 반투명 글래스 패널
+  // 4. Central translucent glass panel
   const panelX = 90;
   const panelY = 160;
   const panelW = width - panelX * 2;
@@ -99,23 +125,23 @@ export async function generateAmuletCardImage({
   ctx.lineWidth = 2;
   ctx.strokeRect(panelX, panelY, panelW, panelH);
 
-  // 5. 상단 타이틀
+  // 5. Header title
   ctx.textAlign = 'center';
   ctx.fillStyle = '#c084fc';
   ctx.font = 'bold 28px sans-serif';
-  ctx.letterSpacing = '6px';
-  ctx.fillText('CHRONO KUJI • 次元神籤', width / 2, panelY + 70);
+  ctx.letterSpacing = '5px';
+  ctx.fillText(headerTitle, width / 2, panelY + 70);
 
   ctx.fillStyle = '#ffffff';
   ctx.font = '900 48px sans-serif';
   ctx.letterSpacing = '2px';
-  ctx.fillText(`${spot.locationName}`, width / 2, panelY + 140);
+  ctx.fillText(locationName, width / 2, panelY + 140);
 
   ctx.fillStyle = '#e9d5ff';
   ctx.font = '600 30px sans-serif';
-  ctx.fillText(`[ ${spot.worldName} ]`, width / 2, panelY + 195);
+  ctx.fillText(`[ ${worldName} ]`, width / 2, panelY + 195);
 
-  // 구분선
+  // Divider
   ctx.strokeStyle = 'rgba(202, 138, 4, 0.6)';
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -123,12 +149,11 @@ export async function generateAmuletCardImage({
   ctx.lineTo(width / 2 + 180, panelY + 230);
   ctx.stroke();
 
-  // 6. 거대한 운명 등급 인장 (Seal)
+  // 6. Giant Fortune Rank Seal (Inshou)
   const sealY = panelY + 440;
   ctx.save();
   ctx.translate(width / 2, sealY);
 
-  // 인장 박스
   const isGreat = luckLevel === '大吉';
   const sealColor = isGreat ? '#dc2626' : (luckLevel.includes('凶') ? '#581c87' : '#d97706');
   const sealBg = isGreat ? 'rgba(220, 38, 38, 0.15)' : 'rgba(217, 119, 6, 0.15)';
@@ -139,7 +164,7 @@ export async function generateAmuletCardImage({
   ctx.lineWidth = 8;
   ctx.strokeRect(-130, -130, 260, 260);
 
-  // 이중 테두리
+  // Double border
   ctx.lineWidth = 2;
   ctx.strokeRect(-118, -118, 236, 236);
 
@@ -150,13 +175,12 @@ export async function generateAmuletCardImage({
   ctx.fillText(luckLevel, 0, -5);
   ctx.restore();
 
-  // 7. 운세 시구 (Poem)
+  // 7. Fortune Poem Verse
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'center';
   ctx.fillStyle = '#fef08a';
-  ctx.font = 'italic bold 36px serif';
+  ctx.font = 'italic bold 34px serif';
 
-  // 시구 자동 줄바꿈
   const maxPoemWidth = panelW - 120;
   const words = poem.split(' ');
   let line = '';
@@ -168,7 +192,7 @@ export async function generateAmuletCardImage({
     if (metrics.width > maxPoemWidth && n > 0) {
       ctx.fillText(`"${line.trim()}"`, width / 2, currentY);
       line = words[n] + ' ';
-      currentY += 54;
+      currentY += 52;
     } else {
       line = testLine;
     }
@@ -177,25 +201,25 @@ export async function generateAmuletCardImage({
     ctx.fillText(`"${line.trim()}"`, width / 2, currentY);
   }
 
-  // 8. 행운의 아이템 박스
+  // 8. Lucky Item Box
   const itemBoxY = currentY + 70;
   ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
-  ctx.fillRect(width / 2 - 260, itemBoxY, 520, 110);
+  ctx.fillRect(width / 2 - 270, itemBoxY, 540, 110);
   ctx.strokeStyle = 'rgba(254, 240, 138, 0.3)';
   ctx.lineWidth = 2;
-  ctx.strokeRect(width / 2 - 260, itemBoxY, 520, 110);
+  ctx.strokeRect(width / 2 - 270, itemBoxY, 540, 110);
 
   ctx.fillStyle = '#facc15';
   ctx.font = 'bold 24px sans-serif';
-  ctx.fillText('✨ 幸運의 次元 아이템', width / 2, itemBoxY + 42);
+  ctx.fillText(itemBoxTitle, width / 2, itemBoxY + 42);
 
   ctx.fillStyle = '#ffffff';
   ctx.font = '900 34px sans-serif';
-  ctx.fillText(spot.luckyItem, width / 2, itemBoxY + 86);
+  ctx.fillText(luckyItem, width / 2, itemBoxY + 86);
 
-  // 9. 총운 요약문
+  // 9. Overall Summary
   ctx.fillStyle = '#e2e8f0';
-  ctx.font = '500 28px sans-serif';
+  ctx.font = '500 27px sans-serif';
   const textWords = overallText.split(' ');
   let textLine = '';
   let textY = itemBoxY + 180;
@@ -219,10 +243,10 @@ export async function generateAmuletCardImage({
     ctx.fillText(textLine.trim(), width / 2, textY);
   }
 
-  // 10. 하단 푸터 & URL
+  // 10. Footer Prompt & Link
   ctx.fillStyle = '#94a3b8';
   ctx.font = 'bold 24px monospace';
-  ctx.fillText('지금 당신의 차원 점괘를 확인하세요', width / 2, panelY + panelH - 80);
+  ctx.fillText(footerPrompt, width / 2, panelY + panelH - 80);
 
   ctx.fillStyle = '#38bdf8';
   ctx.font = '900 32px monospace';

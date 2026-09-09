@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SPOTS } from './constants';
 import { OmikujiResult, LlmInterpretationResult, Spot } from './types';
 import { useToast } from './Toast';
-import { WORLD_OMIKUJI_LORE } from './omikujiLore';
+import { getSpacetimeFortune } from './omikujiLore';
 import { generateAmuletCardImage } from './utils/AmuletCardGenerator';
 import { LocalGameService } from './services/LocalGameService';
 import { useLanguage } from './i18n/LanguageContext';
@@ -45,12 +45,58 @@ export default function OmikujiView({
   const isGreatLuck = result.luck_level === "大吉";
   const isBadLuck = result.luck_level === "凶" || result.luck_level === "大凶";
 
-  // 12대 세계관 맞춤형 오미쿠지 로어 보강 (Enrichment)
+  // 12대 세계관 맞춤형 오미쿠지 로어 보강 (언어별 다국어 완벽 적용)
   const spotId = activeSpot?.id || result.spot_id;
-  const customLore = WORLD_OMIKUJI_LORE[spotId]?.[result.luck_level];
+  const customLore = getSpacetimeFortune(spotId, result.luck_level, language);
   const displayPoem = customLore?.poem || result.meta_info?.poem;
   const displayText = customLore?.text || result.original_text;
   const displayCategories = customLore?.categories || result.meta_info?.categories;
+
+  const formatLuckyDirection = (dir?: string) => {
+    if (!dir) return '';
+    if (language === 'ko') return dir;
+    const directionMapEn: Record<string, string> = {
+      '동쪽': 'East',
+      '서쪽': 'West',
+      '남쪽': 'South',
+      '북쪽': 'North',
+      '동북쪽': 'North-East',
+      '북동쪽': 'North-East',
+      '동남쪽': 'South-East',
+      '남동쪽': 'South-East',
+      '서북쪽': 'North-West',
+      '북서쪽': 'North-West',
+      '서남쪽': 'South-West',
+      '남서쪽': 'South-West',
+    };
+    const directionMapJa: Record<string, string> = {
+      '동쪽': '東',
+      '서쪽': '西',
+      '남쪽': '南',
+      '북쪽': '北',
+      '동북쪽': '北東',
+      '북동쪽': '北東',
+      '동남쪽': '南東',
+      '남동쪽': '南東',
+      '서북쪽': '北西',
+      '북서쪽': '北西',
+      '서남쪽': '南西',
+      '남서쪽': '南西',
+    };
+    let formatted = dir;
+    if (language === 'en') {
+      for (const [k, v] of Object.entries(directionMapEn)) {
+        if (formatted.includes(k)) return `${v} Dimensional Wind`;
+      }
+      return formatted.replace('차원의 바람', 'Dimensional Wind');
+    } else if (language === 'ja') {
+      for (const [k, v] of Object.entries(directionMapJa)) {
+        if (formatted.includes(k)) return `${v}の次元風`;
+      }
+      return formatted.replace('차원의 바람', 'の次元風');
+    }
+    return formatted;
+  };
 
   // 대길일 때 황금 컨페티 파티클 연출 트리거
   useEffect(() => {
@@ -135,7 +181,9 @@ export default function OmikujiView({
         spot: activeSpot,
         luckLevel: result.luck_level,
         poem: displayPoem || "The dimensional winds guide your fate.",
-        overallText: displayText || "Great fortune walks beside you."
+        overallText: displayText || "Great fortune walks beside you.",
+        language: language,
+        spotInfo: spotInfo || undefined
       });
 
       const file = new File([blob], `ChronoKuji_${activeSpot.name}_${result.luck_level}.png`, { type: 'image/png' });
@@ -307,37 +355,37 @@ export default function OmikujiView({
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5 my-3.5">
             {displayCategories.wish && (
               <div className="bg-black/40 border border-gray-800 p-2.5 rounded-xl">
-                <span className="text-[10px] text-purple-400 font-bold block">願事 ({t.omikuji.categories.wish})</span>
+                <span className="text-[10px] text-purple-400 font-bold block">{t.omikuji.categories.wish}</span>
                 <span className="text-xs text-gray-200 font-medium">{displayCategories.wish}</span>
               </div>
             )}
             {displayCategories.love && (
               <div className="bg-black/40 border border-gray-800 p-2.5 rounded-xl">
-                <span className="text-[10px] text-pink-400 font-bold block">戀愛 ({t.omikuji.categories.love})</span>
+                <span className="text-[10px] text-pink-400 font-bold block">{t.omikuji.categories.love}</span>
                 <span className="text-xs text-gray-200 font-medium">{displayCategories.love}</span>
               </div>
             )}
             {displayCategories.wealth && (
               <div className="bg-black/40 border border-gray-800 p-2.5 rounded-xl">
-                <span className="text-[10px] text-yellow-400 font-bold block">金運 ({t.omikuji.categories.wealth})</span>
+                <span className="text-[10px] text-yellow-400 font-bold block">{t.omikuji.categories.wealth}</span>
                 <span className="text-xs text-gray-200 font-medium">{displayCategories.wealth}</span>
               </div>
             )}
             {displayCategories.work && (
               <div className="bg-black/40 border border-gray-800 p-2.5 rounded-xl">
-                <span className="text-[10px] text-blue-400 font-bold block">事業 ({t.omikuji.categories.work})</span>
+                <span className="text-[10px] text-blue-400 font-bold block">{t.omikuji.categories.work}</span>
                 <span className="text-xs text-gray-200 font-medium">{displayCategories.work}</span>
               </div>
             )}
             {displayCategories.travel && (
               <div className="bg-black/40 border border-gray-800 p-2.5 rounded-xl">
-                <span className="text-[10px] text-emerald-400 font-bold block">旅行 ({t.omikuji.categories.travel})</span>
+                <span className="text-[10px] text-emerald-400 font-bold block">{t.omikuji.categories.travel}</span>
                 <span className="text-xs text-gray-200 font-medium">{displayCategories.travel}</span>
               </div>
             )}
             {displayCategories.waiting && (
               <div className="bg-black/40 border border-gray-800 p-2.5 rounded-xl">
-                <span className="text-[10px] text-cyan-400 font-bold block">待人 ({t.omikuji.categories.waiting})</span>
+                <span className="text-[10px] text-cyan-400 font-bold block">{t.omikuji.categories.waiting}</span>
                 <span className="text-xs text-gray-200 font-medium">{displayCategories.waiting}</span>
               </div>
             )}
@@ -348,7 +396,7 @@ export default function OmikujiView({
         <div className="flex flex-wrap gap-2 text-[11px] font-bold text-gray-300 pt-2 border-t border-gray-800/80">
           {result.meta_info?.lucky_direction && (
             <span className="bg-gray-900/80 border border-gray-700/60 px-3 py-1 rounded-xl">
-              🧭 {t.omikuji.luckyDirection}: <span className="text-cyan-300">{result.meta_info.lucky_direction}</span>
+              🧭 {t.omikuji.luckyDirection}: <span className="text-cyan-300">{formatLuckyDirection(result.meta_info.lucky_direction)}</span>
             </span>
           )}
           {result.meta_info?.lucky_number && (

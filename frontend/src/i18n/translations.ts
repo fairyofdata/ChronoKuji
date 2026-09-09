@@ -135,6 +135,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'TalesWeaver',
         shortName: 'Kreiden Plains',
         luckyItem: 'Breeze Feather',
+        itemDesc: 'A mystical feather imbued with the gentle breeze and freedom of the Kreiden Plains.',
         desc: 'A serene grassland where gentle breezes whisper of ancient runes.'
       },
       2: {
@@ -143,6 +144,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'Pokémon',
         shortName: 'Driftveil Drawbridge',
         luckyItem: 'Poké Ball',
+        itemDesc: 'A wondrous capsule holding the promise of fateful encounters and boundless adventure.',
         desc: 'A neon-lit industrial bridge humming with electric ambition.'
       },
       3: {
@@ -151,6 +153,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'Spirited Away',
         shortName: 'Aburaya',
         luckyItem: 'Herbal Token',
+        itemDesc: 'A wooden talisman imbued with purifying vapors and restorative herbal springs.',
         desc: 'A scarlet bathhouse bathed in spirit steam and lantern glow.'
       },
       4: {
@@ -159,6 +162,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'Cyberpunk',
         shortName: 'Night City',
         luckyItem: 'Neural Accelerator',
+        itemDesc: 'A high-grade cyberware chip pushing neural reflexes past human limitations.',
         desc: 'A towering megalopolis drenched in neon, chrome, and high-octane grit.'
       },
       5: {
@@ -167,6 +171,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'The Simpsons',
         shortName: "Moe's Tavern",
         luckyItem: 'Duff Beer',
+        itemDesc: 'A cold, jovial pint of Duff to wash away the burdens of another hectic day.',
         desc: 'A warm, comedic neighborhood pub filled with laughter and cold mugs.'
       },
       6: {
@@ -175,6 +180,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'Crayon Shin-chan',
         shortName: 'Kasukabe',
         luckyItem: 'Chocobi',
+        itemDesc: 'A pink snack box packed with pure childhood wonder and sweet nostalgic delight.',
         desc: 'A cozy sunset playground filled with nostalgic childhood memories.'
       },
       7: {
@@ -183,6 +189,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'Frieren: Beyond Journey',
         shortName: 'Äußerst',
         luckyItem: 'Ancient Grimoire',
+        itemDesc: 'An ancient parchment grimoire inscribed with timeless magical wisdom.',
         desc: 'A quiet magical academy where ancient spells echo through the ages.'
       },
       8: {
@@ -191,6 +198,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'MapleStory',
         shortName: 'Lith Harbor',
         luckyItem: 'Red Potion',
+        itemDesc: "A vital draught that restores stamina and kindles the spark of a beginner's journey.",
         desc: 'The historic starting port of boundless adventure and ocean winds.'
       },
       9: {
@@ -199,6 +207,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'Tangled',
         shortName: 'Corona Kingdom',
         luckyItem: 'Magic Frying Pan',
+        itemDesc: 'An unexpected yet trusty implement that stirs courage and resolute determination.',
         desc: 'A starlit night sky illuminated by thousands of golden floating lanterns.'
       },
       10: {
@@ -207,6 +216,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'League of Legends',
         shortName: 'Howling Abyss',
         luckyItem: 'Poro Snax',
+        itemDesc: 'A warm, fluffy morsel that melts the bitter frost of the Howling Abyss.',
         desc: 'An ancient frost bridge spanning over glacial rifts and howling blizzards.'
       },
       11: {
@@ -215,6 +225,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'Harry Potter',
         shortName: 'Hogwarts',
         luckyItem: 'Golden Snitch',
+        itemDesc: 'A dazzling winged sphere whose capture bestows instant glory and triumph.',
         desc: 'A magnificent vaulted hall illuminated by floating candles and magic.'
       },
       12: {
@@ -223,6 +234,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'Interstellar',
         shortName: 'Tesseract',
         luckyItem: 'Quantum Gravity Watch',
+        itemDesc: 'A ticking artifact proving that gravity and boundless love can bridge any spacetime gulf.',
         desc: 'A five-dimensional spacetime construct where gravity transcends time and distance.'
       }
     }
@@ -284,6 +296,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
       shakePrompt: '산통을 정성껏 흔들어 운명의 산대를 뽑으세요',
       tapToShake: '산통 흔들기 (4회 연타)',
       luckyItem: '행운의 아이템',
+      itemDesc: '중력과 사랑이 시공간을 초월함을 증명하는 초침의 시계',
       poeticVerse: '✦ 차원 운세 시(詩) ✦',
       overallFortune: '📜 차원의 총운',
       categories: {
@@ -361,6 +374,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: '테일즈위버',
         shortName: '크라이덴 평원',
         luckyItem: '바람의 깃털',
+        itemDesc: '크라이덴 평원의 산들바람과 자유가 깃든 신비로운 깃털',
         desc: '산들바람이 불어오는 평화로운 초원.'
       },
       2: {
@@ -369,6 +383,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: '포켓몬스터',
         shortName: '물풍경 도개교',
         luckyItem: '몬스터볼',
+        itemDesc: '새로운 만남과 모험의 가능성이 담긴 캡슐',
         desc: '전기 에너지와 네온사인이 반짝이는 활기찬 도개교.'
       },
       3: {
@@ -377,6 +392,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: '센과 치히로의 행방불명',
         shortName: '아부라야',
         luckyItem: '약탕패',
+        itemDesc: '온천장의 신비로운 효능과 정화의 기운이 깃든 나무 팻말',
         desc: '신비로운 붉은 등불과 증기가 감도는 전통 온천장.'
       },
       4: {
@@ -385,6 +401,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: '사이버펑크',
         shortName: '나이트 시티',
         luckyItem: '신경 가속기',
+        itemDesc: '한계를 뛰어넘는 반사신경과 사이버웨어 칩',
         desc: '글리치와 네온 불빛이 번쩍이는 하이테크 미래 도시.'
       },
       5: {
@@ -393,6 +410,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: '심슨 가족',
         shortName: '모의 선술집',
         luckyItem: '더프 맥주',
+        itemDesc: '하루의 피로를 털어내는 유쾌하고 시원한 맥주 한 잔',
         desc: '유쾌한 웃음소리와 시원한 맥주잔이 부딪히는 단골 펍.'
       },
       6: {
@@ -401,6 +419,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: '크레용 신짱',
         shortName: '떡잎마을',
         luckyItem: '초코비',
+        itemDesc: '순수한 동심과 달콤한 즐거움이 가득한 핑크빛 과자 상자',
         desc: '노을 지는 저녁의 아련하고 따뜻한 유년의 놀이터.'
       },
       7: {
@@ -409,6 +428,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: '장송의 프리렌',
         shortName: '오이서스트',
         luckyItem: '고대 마도서',
+        itemDesc: '유구한 시간과 마법의 지혜가 기록된 양피지 마도서',
         desc: '고대 마법의 룬 문자와 시공간의 침묵이 흐르는 성역.'
       },
       8: {
@@ -417,6 +437,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: '메이플스토리',
         shortName: '리스항구',
         luckyItem: '빨간 포션',
+        itemDesc: '모험의 첫 발걸음과 원기를 회복시켜주는 물약',
         desc: '끝없는 첫 모험의 설렘이 깃든 푸른 바다의 항구.'
       },
       9: {
@@ -425,6 +446,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: '라푼젤',
         shortName: '코로나 왕국',
         luckyItem: '마법의 프라이팬',
+        itemDesc: '단단한 결단력과 용기를 북돋워 주는 만능 무기',
         desc: '황금빛 풍등이 밤하늘을 수놓는 환상적인 왕국.'
       },
       10: {
@@ -433,6 +455,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: '리그 오브 레전드',
         shortName: '칼바람 나락',
         luckyItem: '포로 간식',
+        itemDesc: '혹한의 칼바람 속에서도 마음을 따스하게 녹이는 푹신한 간식',
         desc: '영구동토와 혹한의 바람이 휘몰아치는 전설의 얼음 다리.'
       },
       11: {
@@ -441,6 +464,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: '해리 포터',
         shortName: '호그와트',
         luckyItem: '골든 스니치',
+        itemDesc: '잡는 순간 승리를 가져다주는 황금빛 마법 날개의 스니치',
         desc: '공중에 떠 있는 촛불과 마법의 온기가 가득한 대강당.'
       },
       12: {
@@ -449,6 +473,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: '인터스텔라',
         shortName: '테서렉트',
         luckyItem: '양자 중력 시계',
+        itemDesc: '중력과 사랑이 시공간을 초월함을 증명하는 초침의 시계',
         desc: '중력과 사랑이 시공간을 초월하는 무한한 5차원 격자 공간.'
       }
     }
@@ -510,6 +535,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
       shakePrompt: '神籤筒を振って運命の御神籤を引き出してください',
       tapToShake: '神籤筒を振る (4回連打)',
       luckyItem: 'ラッキーアイテム',
+      itemDesc: '重力と愛が時空を超えることを証明する針を刻む腕時計。',
       poeticVerse: '✦ 時空の運勢詩 ✦',
       overallFortune: '📜 次元の総運',
       categories: {
@@ -587,6 +613,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'テイルズウィーバー',
         shortName: 'クライデン平原',
         luckyItem: '風の羽',
+        itemDesc: 'クライデン平原のそよ風と自由が宿る神秘の羽。',
         desc: 'そよ風が吹き抜ける平穏な草原。'
       },
       2: {
@@ -595,6 +622,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'ポケットモンスター',
         shortName: 'ホドモエの跳ね橋',
         luckyItem: 'モンスターボール',
+        itemDesc: '新たな出会いと冒険の可能性を秘めたカプセル。',
         desc: '電気エネルギーとネオンサインが煌めく活気ある跳ね橋。'
       },
       3: {
@@ -603,6 +631,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: '千と千尋の神隠し',
         shortName: '油屋',
         luckyItem: '薬湯の札',
+        itemDesc: '湯屋の神秘的な霊効と浄化の気が宿る木札。',
         desc: '神秘的な赤い提灯と湯気が立ち込める伝統的な湯屋。'
       },
       4: {
@@ -611,6 +640,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'サイバーパンク',
         shortName: 'ナイトシティ',
         luckyItem: '神経加速器',
+        itemDesc: '限界を超える反射神経を授けるサイバーウェアチップ。',
         desc: 'グリッチとネオンが瞬くハイテク未来都市。'
       },
       5: {
@@ -619,6 +649,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'ザ・シンプソンズ',
         shortName: 'モエの酒場',
         luckyItem: 'ダフビール',
+        itemDesc: '一日の疲れを吹き飛ばす、陽気で爽快なビールジョッキ。',
         desc: '陽気な笑い声と冷たいジョッキがぶつかり合う馴染みのパブ。'
       },
       6: {
@@ -627,6 +658,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'クレヨンしんちゃん',
         shortName: '春日部',
         luckyItem: 'チョコビ',
+        itemDesc: '純真な童心と甘い喜びに満ちたピンク色のお菓子箱。',
         desc: '夕焼けに染まる懐かしく温かな幼少期の遊び場。'
       },
       7: {
@@ -635,6 +667,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: '葬送のフリーレン',
         shortName: 'オイサースト',
         luckyItem: '古代の魔導書',
+        itemDesc: '悠久の時と魔法の知恵が記された羊皮紙の魔導書。',
         desc: '古代魔法のルーン文字と時空の静寂が漂う聖域。'
       },
       8: {
@@ -643,6 +676,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'メイプルストーリー',
         shortName: 'リス港口',
         luckyItem: '赤いポーション',
+        itemDesc: '冒険の第一歩と元気を回復させる初心者の秘薬。',
         desc: '果てしない最初の冒険への胸の高鳴りが宿る青い港。'
       },
       9: {
@@ -651,6 +685,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: '塔の上のラプンツェル',
         shortName: 'コロナ王国',
         luckyItem: '魔法のフライパン',
+        itemDesc: '揺るぎない決意と勇気を奮い立たせる万能のフライパン。',
         desc: '無数の黄金のランタンが夜空を彩る幻想的な王国。'
       },
       10: {
@@ -659,6 +694,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'リーグ・オブ・レジェンド',
         shortName: 'ハウリングアビス',
         luckyItem: 'ポロスナック',
+        itemDesc: '極寒の吹雪の中でも心を温かく解きほぐすふわふわのスナック。',
         desc: '永久凍土と極寒の吹雪が吹き荒れる伝説の氷の橋。'
       },
       11: {
@@ -667,6 +703,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'ハリー・ポッター',
         shortName: 'ホグワーツ',
         luckyItem: '金のスニッチ',
+        itemDesc: '手にした瞬間に栄光をもたらす黄金の翼を持つスニッチ。',
         desc: '宙に浮かぶ無数の蝋燭と魔法の温もりに満ちた大広間。'
       },
       12: {
@@ -675,6 +712,7 @@ export const TRANSLATIONS: Record<Language, Translations> = {
         worldName: 'インターステラー',
         shortName: 'テセラック',
         luckyItem: '量子重力時計',
+        itemDesc: '重力と愛が時空を超えることを証明する針を刻む腕時計。',
         desc: '重力と愛が時空を超越する無限の5次元グリッド空間。'
       }
     }

@@ -6,6 +6,7 @@ export interface SpotTranslation {
   worldName: string;
   shortName: string;
   luckyItem: string;
+  itemDesc?: string;
   desc?: string;
 }
 

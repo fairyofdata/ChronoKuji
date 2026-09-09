@@ -102,7 +102,7 @@ export default function CodexModal({ isOpen, onClose, collectedItems = [], isCom
                 <span className="text-[10px] text-purple-400 font-bold">{spotInfo.locationName}</span>
                 <h4 className="text-xs font-extrabold text-white mb-1">{displayName}</h4>
                 <p className="text-[10px] text-gray-400 line-clamp-2 leading-tight">
-                  {isCollected ? item.desc : t.codex.drawToCollect}
+                  {isCollected ? (spotInfo.itemDesc || item.desc) : t.codex.drawToCollect}
                 </p>
               </div>
             );

@@ -573,7 +573,7 @@ function AppContent() {
 
       // Standalone Fallback
       if (!data) {
-        data = LocalGameService.drawOmikuji(userState.current_spot_id);
+        data = LocalGameService.drawOmikuji(userState.current_spot_id, language);
       }
 
       setOmikujiResult(data);
@@ -586,8 +586,8 @@ function AppContent() {
 
       showToast({
         type: data.luck_level === '大吉' ? 'success' : data.luck_level === '凶' || data.luck_level === '大凶' ? 'warning' : 'info',
-        title: `🥠 점괘 [${data.luck_level}] 출현`,
-        message: `운명의 점괘가 펼쳐졌습니다.`
+        title: language === 'en' ? `🥠 Fortune [${data.luck_level}] Revealed` : language === 'ja' ? `🥠 おみくじ [${data.luck_level}] 出現` : `🥠 점괘 [${data.luck_level}] 출현`,
+        message: language === 'en' ? 'The tapestry of your destiny unfolds.' : language === 'ja' ? '運命のおみくじが開かれました。' : '운명의 점괘가 펼쳐졌습니다.'
       });
       // 도감 갱신
       setCollectedItems(LocalGameService.getCollectedCodex());
