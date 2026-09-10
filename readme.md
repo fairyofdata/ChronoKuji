@@ -171,3 +171,5 @@ If you own personal audio tracks, place them in:
 - This project is a **non-profit, fan-made open-source toy project**.
 - All trademarks, logos, characters, and fictional world IPs belong to their respective original copyright holders.
 - Background and item illustrations in this repository are non-commercial digital artworks generated via Google AI.
+- This repository is intended strictly for technical demonstration, portfolio showcase, and research purposes.
+- If you are a copyright holder and wish for your IP reference to be modified or removed, please open an issue or contact me, and it will be addressed immediately.
