@@ -264,6 +264,14 @@ export const AudioEngine = {
     }
   },
 
+  playRickroll: () => {
+    playSmartTrack(
+      SYSTEM_AUDIO_TRACKS.rickroll.bgm,
+      SYSTEM_AUDIO_TRACKS.rickroll.youtubeId,
+      0
+    );
+  },
+
   stopAll: () => {
     currentRequestId++; // 진행 중인 비동기 요청 취소
     currentPlayingUrl = null;

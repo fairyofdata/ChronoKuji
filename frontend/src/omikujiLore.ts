@@ -27,5 +27,10 @@ export function getSpacetimeFortune(
   const spotMap = table[spotId] || table[String(spotId)] || table[2] || table["2"];
   if (!spotMap) return undefined;
 
-  return spotMap[luckLevel] || spotMap["吉"] || Object.values(spotMap)[0];
+  const fortune = spotMap[luckLevel] || 
+    (luckLevel === '大凶' ? spotMap['대흉'] : (luckLevel === '대흉' ? spotMap['大凶'] : undefined)) || 
+    spotMap["吉"] || 
+    Object.values(spotMap)[0];
+
+  return fortune;
 }

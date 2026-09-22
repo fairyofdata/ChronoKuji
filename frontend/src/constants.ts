@@ -16,6 +16,11 @@ export const SYSTEM_AUDIO_TRACKS: SystemAudioTracks = {
     youtubeId: '1vX78f6T4eI',
     title: 'Tangled - Kingdom Dance'
   },
+  rickroll: {
+    bgm: '/assets/audio/bgm/extra/rickroll.mp3',
+    youtubeId: 'dQw4w9WgXcQ',
+    title: 'Rick Astley - Never Gonna Give You Up'
+  },
   // 메이플스토리 이스터에그 트랙 보존
   easterEggs: {
     mapleRift: {

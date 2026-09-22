@@ -128,8 +128,8 @@ export class LocalGameService {
   /**
    * 오미쿠지 뽑기 (다국어 지원)
    */
-  static drawOmikuji(spotId: number, lang?: 'ko' | 'en' | 'ja'): OmikujiResult {
-    const luckLevel = getRandomLuckLevel();
+  static drawOmikuji(spotId: number, lang?: 'ko' | 'en' | 'ja', forcedLuck?: string): OmikujiResult {
+    const luckLevel = forcedLuck || getRandomLuckLevel();
     const currentLang = (lang || (typeof localStorage !== 'undefined' ? localStorage.getItem('chronokuji_lang') : 'en') || 'en') as 'ko' | 'en' | 'ja';
     
     const fortune = getSpacetimeFortune(spotId, luckLevel, currentLang) || 

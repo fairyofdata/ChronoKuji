@@ -6,6 +6,7 @@ import { getSpacetimeFortune } from './omikujiLore';
 import { generateAmuletCardImage } from './utils/AmuletCardGenerator';
 import { LocalGameService } from './services/localGameService';
 import { useLanguage } from './i18n/LanguageContext';
+import { AudioEngine } from './audioEngine';
 
 interface OmikujiViewProps {
   result: OmikujiResult;
@@ -107,6 +108,13 @@ export default function OmikujiView({
     }
   }, [isGreatLuck]);
 
+  // 대흉(大凶)일 때 릭롤링 BGM 자동 전환
+  useEffect(() => {
+    if (result.luck_level === '大凶') {
+      AudioEngine.playRickroll();
+    }
+  }, [result.luck_level]);
+
   // 운세 등급별 테마 색상 & 뱃지
   const getLuckBadgeStyle = (level: string) => {
     switch (level) {
@@ -121,8 +129,9 @@ export default function OmikujiView({
       case '末吉':
         return 'bg-gradient-to-r from-indigo-600 to-purple-400 text-white shadow-purple-500/40';
       case '凶':
-      case '大凶':
         return 'bg-gradient-to-r from-purple-950 via-gray-900 to-black text-purple-300 border border-purple-500/60 shadow-purple-950/80';
+      case '大凶':
+        return 'bg-gradient-to-r from-fuchsia-950 via-purple-900 to-pink-950 text-fuchsia-200 border-2 border-fuchsia-400 shadow-fuchsia-900/90 animate-pulse';
       default:
         return 'bg-gray-800 text-gray-200';
     }
@@ -300,6 +309,60 @@ export default function OmikujiView({
           </div>
         </div>
 
+        {/* Special Rickroll Dimensional Anomaly Banner for 大凶 */}
+        {result.luck_level === '大凶' && (
+          <div className="mb-4 p-4 rounded-2xl bg-gradient-to-r from-fuchsia-950/90 via-purple-900/70 to-pink-950/90 border border-fuchsia-400/60 shadow-2xl relative overflow-hidden animate-fade-in text-left">
+            <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-fuchsia-500/30">
+              <div className="flex items-center space-x-2">
+                <span className="text-xl animate-bounce">🕺</span>
+                <span className="text-xs font-black text-fuchsia-300 tracking-wider uppercase">
+                  {language === 'en' 
+                    ? '✦ Spacetime Anomaly: Rickroll Protocol ✦'
+                    : language === 'ja'
+                    ? '✦ 時空特異点異常：リックロール発動！ ✦'
+                    : '✦ 시공간 특이점 왜곡: 릭롤링 프로토콜 가동! ✦'}
+                </span>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-fuchsia-500/20 text-fuchsia-200 border border-fuchsia-400/50 font-mono font-bold">
+                dQw4w9WgXcQ
+              </span>
+            </div>
+
+            <p className="text-xs text-pink-200 font-bold leading-relaxed mb-2">
+              {language === 'en'
+                ? '"Every dimension may have cursed your fate, but this man will NEVER give you up!"'
+                : language === 'ja'
+                ? '「全次元の運命があなたを見放したとしても…この男は決してあなたを諦めない！」'
+                : '“모든 차원의 인과율이 꼬였을지라도... 이 남자는 결코 당신을 포기하지 않습니다!”'}
+            </p>
+
+            <div className="p-2.5 bg-black/60 rounded-xl border border-fuchsia-500/30 text-center font-mono text-xs text-pink-300 font-black tracking-wide space-y-0.5 shadow-inner">
+              <p>🎵 Never gonna give you up, never gonna let you down ~ 🎶</p>
+              <p className="text-[11px] text-fuchsia-400 font-normal">Never gonna run around and desert you 🕺✨</p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-3 pt-2 border-t border-fuchsia-500/20">
+              <button
+                onClick={() => AudioEngine.playRickroll()}
+                className="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-500 text-white shadow-lg shadow-fuchsia-500/40 transition flex items-center space-x-1 active:scale-95"
+              >
+                <span>🔊</span>
+                <span>{language === 'en' ? 'Replay BGM' : language === 'ja' ? 'BGM再開' : '릭롤 BGM 다시 재생'}</span>
+              </button>
+
+              <a
+                href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-black/60 hover:bg-black/90 text-pink-300 border border-fuchsia-500/40 shadow transition flex items-center space-x-1 active:scale-95"
+              >
+                <span>📺</span>
+                <span>{language === 'en' ? 'Open Official MV' : language === 'ja' ? '公式MVを開く' : '공식 MV 보러가기'}</span>
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Big Luck Level Display */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-2 border-b border-gray-800/80">
           <div className="flex items-center space-x-3">
@@ -310,6 +373,11 @@ export default function OmikujiView({
                   {getLocalizedLuckName(result.luck_level, language)}
                 </span>
               )}
+              {result.luck_level === '大凶' && (
+                <span className="text-[9px] font-mono font-black text-pink-300 bg-black/50 px-1.5 py-0.5 rounded mt-0.5">
+                  🕺 RICKROLL
+                </span>
+              )}
             </div>
             <div className="text-left">
               <p className="text-xs text-gray-400">
@@ -317,7 +385,12 @@ export default function OmikujiView({
               </p>
               <p className="text-sm font-bold text-gray-200">
                 {result.luck_level === '大吉' ? t.omikuji.greatLuckCheer : 
-                 result.luck_level === '凶' || result.luck_level === '大凶' ? (isTied ? t.omikuji.purifiedWarn : t.omikuji.badLuckWarn) : 
+                 result.luck_level === '大凶' ? (
+                   <span className="text-fuchsia-300 font-black">
+                     {language === 'en' ? '🕺 Never Gonna Give You Up!' : language === 'ja' ? '🕺 決してあなたを諦めない大凶！' : '🕺 절대 당신을 포기하지 않을 대흉!'}
+                   </span>
+                 ) :
+                 result.luck_level === '凶' ? (isTied ? t.omikuji.purifiedWarn : t.omikuji.badLuckWarn) : 
                  t.omikuji.peacefulCheer}
               </p>
             </div>

@@ -25,6 +25,7 @@ export interface SystemAudioTracks {
   lobby: SystemAudioTrack;
   travel: SystemAudioTrack;
   celebrationRapunzel: SystemAudioTrack;
+  rickroll: SystemAudioTrack;
   easterEggs: {
     mapleRift: SystemAudioTrack;
     mapleTimePath: SystemAudioTrack;

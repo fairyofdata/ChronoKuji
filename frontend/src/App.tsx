@@ -582,14 +582,14 @@ function AppContent() {
     setIsShakeModalOpen(true);
   };
 
-  const handleCompleteShakeAndDraw = async () => {
+  const handleCompleteShakeAndDraw = async (forcedLuck?: string) => {
     setIsShakeModalOpen(false);
     if (!userId || !userState?.current_spot_id) return;
     setIsDrawing(true);
 
     try {
       let data: OmikujiResult | null = null;
-      if (API_BASE_URL) {
+      if (API_BASE_URL && !forcedLuck) {
         try {
           const res = await fetch(`${API_BASE_URL}/api/v1/omikuji/draw?spot_id=${userState.current_spot_id}`, {
             method: 'POST',
@@ -599,16 +599,19 @@ function AppContent() {
         } catch {}
       }
 
-      // Standalone Fallback
+      // Standalone Fallback / Forced Luck
       if (!data) {
-        data = LocalGameService.drawOmikuji(userState.current_spot_id, language);
+        data = LocalGameService.drawOmikuji(userState.current_spot_id, language, forcedLuck);
       }
 
       setOmikujiResult(data);
       setLlmResult(null);
 
-      // 라푼젤 대길 축제 음악 전환
-      if (userState.current_spot_id === 9 && data.luck_level === '大吉') {
+      // 대흉(大凶) 릭롤링 음악 전환 (Never Gonna Give You Up - dQw4w9WgXcQ)
+      if (data.luck_level === '大凶') {
+        AudioEngine.playRickroll();
+      } else if (userState.current_spot_id === 9 && data.luck_level === '大吉') {
+        // 라푼젤 대길 축제 음악 전환
         AudioEngine.playCelebrationMusic(9);
       }
 
@@ -767,6 +770,19 @@ function AppContent() {
                       }
                     </span>
                   </button>
+
+                  {isAdmin && (
+                    <div className="pt-2 flex items-center space-x-2">
+                      <button
+                        onClick={() => handleCompleteShakeAndDraw('大凶')}
+                        disabled={isDrawing}
+                        className="text-xs font-bold px-3 py-1.5 rounded-xl bg-purple-900/80 hover:bg-purple-800 text-purple-200 border border-purple-400/50 shadow transition flex items-center space-x-1 active:scale-95"
+                      >
+                        <span>🕺</span>
+                        <span>[Admin] ⚡ 대흉 (Rickroll) 즉시 뽑기</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
