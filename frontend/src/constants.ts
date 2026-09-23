@@ -331,6 +331,13 @@ export const LUCK_LEVEL_NAMES: Record<string, { ko: string; en: string; ja: stri
   '末吉': { ko: '말길', en: 'Future Blessing', ja: '末吉' },
   '凶':   { ko: '흉',   en: 'Misfortune', ja: '凶' },
   '大凶': { ko: '대흉', en: 'Great Misfortune', ja: '大凶' },
+  // 한글 입력 호환 alias
+  '대길': { ko: '대길', en: 'Great Blessing', ja: '大吉' },
+  '중길': { ko: '중길', en: 'Middle Blessing', ja: '中吉' },
+  '소길': { ko: '소길', en: 'Small Blessing', ja: '小吉' },
+  '길':   { ko: '길',   en: 'Blessing', ja: '吉' },
+  '말길': { ko: '말길', en: 'Future Blessing', ja: '末吉' },
+  '대흉': { ko: '대흉', en: 'Great Misfortune', ja: '大凶' },
 };
 
 export function getLocalizedLuckName(level: string, lang: 'ko' | 'en' | 'ja' = 'en'): string {
@@ -340,8 +347,12 @@ export function getLocalizedLuckName(level: string, lang: 'ko' | 'en' | 'ja' = '
 }
 
 export function getLocalizedLuckDisplay(level: string, lang: 'ko' | 'en' | 'ja' = 'en'): string {
-  if (lang === 'ja') return level;
-  const item = LUCK_LEVEL_NAMES[level];
-  if (!item) return level;
-  return `${level} (${item[lang]})`;
+  const kanjiMap: Record<string, string> = {
+    '대길': '大吉', '중길': '中吉', '소길': '小吉', '길': '吉', '말길': '末吉', '흉': '凶', '대흉': '大凶'
+  };
+  const kanji = kanjiMap[level] || level;
+  if (lang === 'ja') return kanji;
+  const item = LUCK_LEVEL_NAMES[level] || LUCK_LEVEL_NAMES[kanji];
+  if (!item) return kanji;
+  return `${kanji} (${item[lang]})`;
 }

@@ -590,7 +590,7 @@ export const WORLD_OMIKUJI_LORE_EN: Record<number, Record<string, WorldFortune>>
         "waiting": "Waiting: The channel is interrupted; do not hold your breath."
       }
     },
-    "대凶": {
+    "大凶": {
       "poem": "The entire team is wiped out and the Nexus burns under siege; yet even the bitterest defeat teaches the geometry of victory.",
       "text": "An absolute collapse in battle, but true warriors grow from defeat. Accept the loss, shake off the tilt, and prepare for the next lobby.",
       "categories": {
@@ -676,7 +676,7 @@ export const WORLD_OMIKUJI_LORE_EN: Record<number, Record<string, WorldFortune>>
         "waiting": "Waiting: Prank calls and false alarms; verify your sources."
       }
     },
-    "대凶": {
+    "大凶": {
       "poem": "A meltdown warning flashes red across the plant dome; only absurd courage and heartfelt family devotion can save the city.",
       "text": "An epic crisis looms, but absurdity and unyielding love will pull you through. Stay resilient and face the chaos with heart.",
       "categories": {
@@ -762,7 +762,7 @@ export const WORLD_OMIKUJI_LORE_EN: Record<number, Record<string, WorldFortune>>
         "waiting": "Waiting: The line is disconnected; do not pursue dead leads."
       }
     },
-    "대凶": {
+    "大凶": {
       "poem": "Cyberpsychosis grips the chrome skeleton in blinding agony; yet memory of true humanity pulls you back from the abyss.",
       "text": "The mortal threshold is reached, but the human soul remains unyielding. Strip away faulty chrome, remember who you are, and rise again.",
       "categories": {
@@ -848,7 +848,7 @@ export const WORLD_OMIKUJI_LORE_EN: Record<number, Record<string, WorldFortune>>
         "waiting": "Waiting: The response is delayed or distorted; verify independently."
       }
     },
-    "대凶": {
+    "大凶": {
       "poem": "The barrier shatters into glittering shards beneath the demon king's shadow; yet the soul of the hero remembers: humans are strong.",
       "text": "A profound trial tests your spirit to the bone, but courage and shared memory cannot be extinguished. Stand tall and cast Zoltraak.",
       "categories": {
@@ -934,7 +934,7 @@ export const WORLD_OMIKUJI_LORE_EN: Record<number, Record<string, WorldFortune>>
         "waiting": "Waiting: Communication is severed; do not press demands."
       }
     },
-    "대凶": {
+    "大凶": {
       "poem": "The ancient shadow engulfs the battlefield in eerie cold; yet the memory of friendship strikes a luminous chord in the dark.",
       "text": "A harrowing defeat challenges your resolve, but the journey does not end here. Stand together with trusted comrades and begin anew.",
       "categories": {
@@ -1020,7 +1020,7 @@ export const WORLD_OMIKUJI_LORE_EN: Record<number, Record<string, WorldFortune>>
         "waiting": "Waiting: The signal was forged; discard false hopes."
       }
     },
-    "대凶": {
+    "大凶": {
       "poem": "Crossing the event horizon into the singularity of Gargantua; yet whatever can happen will happen—Murphy's law contains grace.",
       "text": "Plunging through the point of no return, all earthly mechanics collapse. Surrender to the cosmic pull—the tesseract awaits on the other side.",
       "categories": {

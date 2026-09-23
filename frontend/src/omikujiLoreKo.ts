@@ -438,7 +438,7 @@ export const WORLD_OMIKUJI_LORE_KO: Record<number, Record<string, WorldFortune>>
         waiting: "기다림: 서버 점검처럼 소식이 지연되니 마음을 비워라."
       }
     },
-    "大흉": {
+    "大凶": {
       poem: "자쿰의 여덟 팔이 대지를 내리치고 묘비가 떨어지나, 성황당에서 부활한 모험가는 더욱 강해진다.",
       text: "모든 버프가 꺼지고 체력이 바닥난 위기이지만, 메이플의 진정한 전설은 수많은 데스 끝에 탄생합니다.",
       categories: {
@@ -702,7 +702,7 @@ export const WORLD_OMIKUJI_LORE_KO: Record<number, Record<string, WorldFortune>>
         waiting: "기다림: 장난전화처럼 엉뚱한 가짜 정보에 속지 말라."
       }
     },
-    "대흉": {
+    "大凶": {
       poem: "스프링필드 원자력 발전소 멜트다운 경보가 울리나, 어떻게든 지구는 멸망하지 않고 돌아간다.",
       text: "핵폭탄급 카오스가 터졌지만, 심슨 가족은 다음 에피소드에서 언제나 멀쩡하게 소파에 앉아 있습니다.",
       categories: {
@@ -842,7 +842,7 @@ export const WORLD_OMIKUJI_LORE_KO: Record<number, Record<string, WorldFortune>>
         waiting: "기다림: 해 질 무렵 여관에 도착할 때 소식이 닿는다."
       }
     },
-    "길": {
+    "吉": {
       poem: "고요한 숲속 호숫가에 이는 잔물결, 엘프의 시선처럼 긴 호흡으로 세상을 바라본다.",
       text: "평온하고 담담한 운세입니다. 인간의 짧은 수명에 연연하기보다 오늘 이 순간의 아름다움을 음미하기에 좋습니다.",
       categories: {
@@ -878,7 +878,7 @@ export const WORLD_OMIKUJI_LORE_KO: Record<number, Record<string, WorldFortune>>
         waiting: "기다림: 마력 교란으로 인해 연락이 두절될 수 있다."
       }
     },
-    "대흉": {
+    "大凶": {
       poem: "칠흑 같은 마족의 결계에 갇혀 마력이 마르고 시험에 탈락한 형국이나, 황금향도 끝내 풀린다.",
       text: "마하트의 만물을 황금으로 바꾸는 저주처럼 혹독한 시련이지만, 인간의 지혜와 엘프의 시간은 불가능을 가능케 합니다.",
       categories: {
@@ -930,7 +930,7 @@ export const WORLD_OMIKUJI_LORE_KO: Record<number, Record<string, WorldFortune>>
         waiting: "기다림: 워프 카드가 반짝이며 곧 전갈이 온다."
       }
     },
-    "길": {
+    "吉": {
       poem: "라이디아의 거대한 나무 마을에 안개가 감돌고, 바람개비는 소리 없이 돌아간다.",
       text: "무리하게 던전을 돌기보다 숲의 기운을 받으며 휴식하기 좋은 날입니다. 평정심을 유지하세요.",
       categories: {
@@ -954,7 +954,7 @@ export const WORLD_OMIKUJI_LORE_KO: Record<number, Record<string, WorldFortune>>
         waiting: "기다림: 잊힐 무렵 피아노 선율처럼 소식이 닿는다."
       }
     },
-    "흉": {
+    "凶": {
       poem: "붉은 모래 사막에서 신기루를 쫓다 갈증에 쓰러졌으니, 헛된 환상을 버리고 오아시스를 찾아라.",
       text: "눈앞의 화려한 드롭템 유혹에 눈이 멀어 덫에 걸릴 위험이 있습니다. 기본 안전 수칙을 엄수하세요.",
       categories: {
@@ -966,7 +966,7 @@ export const WORLD_OMIKUJI_LORE_KO: Record<number, Record<string, WorldFortune>>
         waiting: "기다림: 통신 회선이 불안정하여 소식이 늦어진다."
       }
     },
-    "대흉": {
+    "大凶": {
       poem: "악령의 봉인이 풀려 대지가 흔들리고 마나석이 산산조각 났으나, 진정한 용사의 혼은 꺾이지 않는다.",
       text: "에피소드 최악의 위기이지만, 테일즈위버의 주인공들은 언제나 그 절망 속에서 각성의 기적을 일으켰습니다.",
       categories: {
@@ -1018,7 +1018,7 @@ export const WORLD_OMIKUJI_LORE_KO: Record<number, Record<string, WorldFortune>>
         waiting: "기다림: 전파 신호가 지연되더라도 천천히 도착한다."
       }
     },
-    "길": {
+    "吉": {
       poem: "끝없는 암흑 공간 속에서 고요히 항해하는 우주선, 무리한 가속을 멈추고 관성에 몸을 맡긴다.",
       text: "시간 지연(Time dilation)의 우주처럼 서두르지 않는 여유가 필요한 날입니다. 호흡을 길게 가져가세요.",
       categories: {

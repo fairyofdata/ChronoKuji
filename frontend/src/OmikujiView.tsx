@@ -41,13 +41,13 @@ export default function OmikujiView({
   const [feedbackSent, setFeedbackSent] = useState<number | null>(null);
   const { showToast } = useToast();
 
-  const activeSpot = spot || SPOTS.find(s => s.id === result.spot_id);
+  const activeSpot = SPOTS.find(s => s.id === result.spot_id) || spot;
   const spotInfo = activeSpot ? getSpotTranslation(activeSpot.id) : null;
   const isGreatLuck = result.luck_level === "大吉";
   const isBadLuck = result.luck_level === "凶" || result.luck_level === "大凶";
 
   // 12대 세계관 맞춤형 오미쿠지 로어 보강 (언어별 다국어 완벽 적용)
-  const spotId = activeSpot?.id || result.spot_id;
+  const spotId = result.spot_id || activeSpot?.id || 2;
   const customLore = getSpacetimeFortune(spotId, result.luck_level, language);
   const displayPoem = customLore?.poem || result.meta_info?.poem;
   const displayText = customLore?.text || result.original_text;

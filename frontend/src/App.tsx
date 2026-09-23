@@ -790,6 +790,7 @@ function AppContent() {
               {omikujiResult && (
                 <div className="w-full max-w-2xl mx-auto">
                   <OmikujiView 
+                    key={omikujiResult.history_id}
                     result={omikujiResult}
                     spot={currentSpot || undefined}
                     llmResult={llmResult}

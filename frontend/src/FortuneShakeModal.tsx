@@ -15,7 +15,7 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [isStickEjecting, setIsStickEjecting] = useState<boolean>(false);
   const [isUnfolding, setIsUnfolding] = useState<boolean>(false);
-  const [fortuneNumber] = useState(() => Math.floor(Math.random() * 88) + 1);
+  const [fortuneNumber, setFortuneNumber] = useState<number>(() => Math.floor(Math.random() * 88) + 1);
   const targetShakes = 4;
 
   const spot = SPOTS.find(s => s.id === spotId);
@@ -27,6 +27,7 @@ export default function FortuneShakeModal({ isOpen, spotId, onComplete }: Fortun
       setIsAnimating(false);
       setIsStickEjecting(false);
       setIsUnfolding(false);
+      setFortuneNumber(Math.floor(Math.random() * 88) + 1);
     }
   }, [isOpen]);
 

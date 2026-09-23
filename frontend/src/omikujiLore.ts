@@ -27,7 +27,21 @@ export function getSpacetimeFortune(
   const spotMap = table[spotId] || table[String(spotId)] || table[2] || table["2"];
   if (!spotMap) return undefined;
 
-  const fortune = spotMap[luckLevel] || 
+  // 정통 한자 등급 정규화 맵 (한글/오타 완벽 대응)
+  const normalizedGradeMap: Record<string, string> = {
+    '대길': '大吉', 'Great Blessing': '大吉',
+    '중길': '中吉', 'Middle Blessing': '中吉',
+    '소길': '小吉', 'Small Blessing': '小吉',
+    '길': '吉', 'Blessing': '吉',
+    '말길': '末吉', 'Future Blessing': '末吉',
+    '흉': '凶', 'Misfortune': '凶',
+    '대흉': '大凶', '大흉': '大凶', '대凶': '大凶', 'Great Misfortune': '大凶'
+  };
+
+  const lookupKey = normalizedGradeMap[luckLevel] || luckLevel;
+
+  const fortune = spotMap[lookupKey] || 
+    spotMap[luckLevel] || 
     (luckLevel === '大凶' ? spotMap['대흉'] : (luckLevel === '대흉' ? spotMap['大凶'] : undefined)) || 
     spotMap["吉"] || 
     Object.values(spotMap)[0];
